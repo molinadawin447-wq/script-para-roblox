@@ -1,6 +1,5 @@
 -- LocalScript: 10 botones negros cuadrados en 2 columnas (5 y 5)
--- Colócalo en: StarterPlayer > StarterPlayerScripts  (o dentro de un ScreenGui)
--- Posicionado arriba del botón de salto en móvil.
+-- Colócalo en: StarterPlayer > StarterPlayerScripts
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -17,12 +16,10 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
 ------------------------------------------------------------
--- Contenedor: anclado abajo-derecha, encima del botón de saltar
--- El botón de salto en móvil suele estar ~ a 90-110 px del borde inferior
--- y ~ 90-110 px del borde derecho.
+-- Configuración de tamaño y posición
 ------------------------------------------------------------
-local TAMANO_BOTON = 44       -- tamaño de cada botón (px)
-local ESPACIO       = 8       -- separación entre botones (px)
+local TAMANO_BOTON = 56       -- ⬅️ más grande (antes 44)
+local ESPACIO       = 8
 local COLUMNAS      = 2
 local FILAS         = 5
 
@@ -34,7 +31,7 @@ contenedor.Name = "Contenedor"
 contenedor.BackgroundTransparency = 1
 contenedor.Size = UDim2.new(0, anchoTotal, 0, altoTotal)
 contenedor.AnchorPoint = Vector2.new(1, 1)          -- anclado abajo-derecha
-contenedor.Position = UDim2.new(1, -20, 1, -180)    -- 20px del borde derecho, 180px del inferior
+contenedor.Position = UDim2.new(1, -20, 1, -130)    -- ⬅️ más abajo (antes -180)
 contenedor.Parent = screenGui
 
 ------------------------------------------------------------
@@ -54,19 +51,17 @@ grid.Parent = contenedor
 for i = 1, 10 do
 	local boton = Instance.new("TextButton")
 	boton.Name = "Boton_" .. i
-	boton.Text = ""                              -- sin texto
+	boton.Text = ""
 	boton.AutoButtonColor = true
-	boton.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- negro
+	boton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	boton.BorderSizePixel = 0
 	boton.LayoutOrder = i
 	boton.Parent = contenedor
 
-	-- Esquinas redondeadas sutiles (opcional, pon 0 para cuadrados puros)
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 4)
+	corner.CornerRadius = UDim.new(0, 6)
 	corner.Parent = boton
 
-	-- Acción al pulsar (edítala según lo que necesites)
 	boton.MouseButton1Click:Connect(function()
 		print("Botón " .. i .. " pulsado")
 	end)
