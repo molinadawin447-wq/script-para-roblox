@@ -2327,8 +2327,23 @@ pcall(function() if syn and syn.protect_gui then syn.protect_gui(gui) end end)
 if not pcall(function() gui.Parent=game:GetService("CoreGui") end) then gui.Parent=LP:WaitForChild("PlayerGui") end
 local main=Instance.new("Frame",gui)
 main.Size=UDim2.new(0,440,0,640);main.AnchorPoint=Vector2.new(0,0.5);main.Position=UDim2.new(0,30,0.5,0)
-main.BackgroundColor3=Color3.fromRGB(0,0,0);main.BackgroundTransparency=0;main.BorderSizePixel=0;main.ClipsDescendants=false
+main.BackgroundColor3=Color3.fromRGB(0,0,0);main.BackgroundTransparency=1;main.BorderSizePixel=0;main.ClipsDescendants=true
 Instance.new("UICorner",main).CornerRadius=UDim.new(0,18)
+
+-- Fondo con imagen personalizada (Panela.jpg)
+local _bgImg=Instance.new("ImageLabel",main)
+_bgImg.Name="BGImage"
+_bgImg.Size=UDim2.new(1,0,1,0)
+_bgImg.Position=UDim2.new(0,0,0,0)
+_bgImg.BackgroundColor3=Color3.fromRGB(0,0,0)
+_bgImg.BackgroundTransparency=0
+_bgImg.BorderSizePixel=0
+_bgImg.ImageTransparency=0
+_bgImg.ScaleType=Enum.ScaleType.Crop
+_bgImg.ZIndex=0
+pcall(function() _bgImg.Image=getcustomasset("Panela.jpg") end)
+Instance.new("UICorner",_bgImg).CornerRadius=UDim.new(0,18)
+
 local _mainStroke=Instance.new("UIStroke",main);_mainStroke.Color=Color3.fromRGB(128,128,128);_mainStroke.Thickness=1;_mainStroke.Transparency=0.35
 
 local _mainScale=Instance.new("UIScale",main)
@@ -2370,18 +2385,21 @@ main.AnchorPoint=Vector2.new(0,0.5)
 main.Position=UDim2.new(0,30,0.5,0)
 local hdr=Instance.new("Frame",main)
 hdr.Size=UDim2.new(1,0,0,46);hdr.BackgroundColor3=Color3.fromRGB(24,24,27);hdr.BackgroundTransparency=0.45;hdr.BorderSizePixel=0
+hdr.ZIndex=2
 Instance.new("UICorner",hdr).CornerRadius=UDim.new(0,14)
 local ttl=Instance.new("TextLabel",hdr)
 ttl.Size=UDim2.new(1,-50,1,0);ttl.Position=UDim2.new(0,16,0,1)
 ttl.BackgroundTransparency=1;ttl.Text="𝑃𝑎𝑟𝑐ℎ3 𝐷𝑢𝑒𝑙𝑠"
 ttl.TextColor3=Color3.fromRGB(255,255,255);ttl.Font=Enum.Font.GothamBold;ttl.TextSize=19
 ttl.TextXAlignment=Enum.TextXAlignment.Left
+ttl.ZIndex=3
 local _ttlGlow=Instance.new("UIStroke",ttl);_ttlGlow.Color=Color3.fromRGB(128,128,128);_ttlGlow.Thickness=1;_ttlGlow.Transparency=0.55
 
 local closeBtn=Instance.new("TextButton",hdr)
 closeBtn.Size=UDim2.new(0,28,0,28);closeBtn.Position=UDim2.new(1,-36,0.5,-14)
 closeBtn.BackgroundColor3=Color3.fromRGB(20,20,22);closeBtn.BorderSizePixel=0
 closeBtn.Text="—";closeBtn.TextColor3=DIM;closeBtn.Font=Enum.Font.GothamBold;closeBtn.TextSize=12
+closeBtn.ZIndex=3
 Instance.new("UICorner",closeBtn).CornerRadius=UDim.new(1,0)
 local cbStroke=Instance.new("UIStroke",closeBtn);cbStroke.Color=Color3.fromRGB(128,128,128);cbStroke.Thickness=1;cbStroke.Transparency=0.5
 closeBtn.MouseEnter:Connect(function() TS:Create(closeBtn,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(48,48,52),TextColor3=Color3.fromRGB(220,220,220)}):Play() end)
@@ -2540,14 +2558,14 @@ menuBtn.Position=UDim2.new(0,12,0.5,-17)
 menuBtn.BackgroundColor3=Color3.fromRGB(15,15,17)
 menuBtn.BorderSizePixel=0
 menuBtn.Text="MENU"
-menuBtn.TextColor3=Color3.fromRGB(255,255,255)
+menuBtn.TextColor3=Color3.fromRGB(0,150,255)
 menuBtn.Font=Enum.Font.GothamBold
 menuBtn.TextSize=14
 menuBtn.ZIndex=50
 menuBtn.AutoButtonColor=false
 Instance.new("UICorner",menuBtn).CornerRadius=UDim.new(0,8)
 local menuStroke=Instance.new("UIStroke",menuBtn)
-menuStroke.Color=Color3.fromRGB(128,128,128)
+menuStroke.Color=Color3.fromRGB(0,150,255)
 menuStroke.Thickness=1
 menuStroke.Transparency=0.3
 menuBtn.MouseEnter:Connect(function() TS:Create(menuBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(35,35,38)}):Play() end)
@@ -2564,6 +2582,7 @@ sf.Size=UDim2.new(1,-26,1,-104);sf.Position=UDim2.new(0,13,0,96)
 sf.BackgroundTransparency=1;sf.BorderSizePixel=0;sf.ClipsDescendants=true
 sf.ScrollBarThickness=3;sf.ScrollBarImageColor3=REDDIM;sf.ScrollBarImageTransparency=0.35
 sf.CanvasSize=UDim2.new(0,0,0,0);sf.AutomaticCanvasSize=Enum.AutomaticSize.Y
+sf.ZIndex=2
 local TAB_IDLE_TXT=Color3.fromRGB(150,150,150)
 local function selectTab(name)
 currentTab=name
