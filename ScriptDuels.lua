@@ -1,4 +1,4 @@
--- 𝑃𝑎𝑟𝑐ℎ3 𝐷𝑢𝑒𝑙𝑠 | LocalScript
+-- Parch3 Duels | LocalScript
 repeat task.wait() until game:IsLoaded()
 local Players,RunService,UIS,TS,Lighting,HS = game:GetService("Players"),game:GetService("RunService"),game:GetService("UserInputService"),game:GetService("TweenService"),game:GetService("Lighting"),game:GetService("HttpService")
 local LP = Players.LocalPlayer
@@ -891,7 +891,6 @@ end
 local function setupSpeedIndicator(char)
 local head=char:WaitForChild("Head",5);if not head then return end
 if head:FindFirstChild("LonelyHeadIndicator") then head.LonelyHeadIndicator:Destroy() end
-local accent=(_G.__Miro_curThemeCol or Color3.fromRGB(196,170,245))
 local bb=Instance.new("BillboardGui",head)
 bb.Name="LonelyHeadIndicator"
 bb.Size=UDim2.new(0,180,0,50);bb.StudsOffset=Vector3.new(0,3,0);bb.AlwaysOnTop=true
@@ -899,14 +898,14 @@ local discordLabel=Instance.new("TextLabel",bb)
 discordLabel.Name="Discord"
 discordLabel.Size=UDim2.new(1,0,0.5,0);discordLabel.Position=UDim2.new(0,0,0,0)
 discordLabel.BackgroundTransparency=1
-discordLabel.Text="𝑃𝑎𝑟𝑐ℎ3 𝐷𝑢𝑒𝑙𝑠";discordLabel.TextColor3=accent
+discordLabel.Text="Parch3 Duels";discordLabel.TextColor3=Color3.fromRGB(170,0,255)
 discordLabel.Font=Enum.Font.GothamBold;discordLabel.TextScaled=false;discordLabel.TextSize=13
 discordLabel.TextStrokeTransparency=0;discordLabel.TextStrokeColor3=Color3.fromRGB(0,0,0)
 speedLabel=Instance.new("TextLabel",bb)
 speedLabel.Name="Speed"
 speedLabel.Size=UDim2.new(1,0,0.5,0);speedLabel.Position=UDim2.new(0,0,0.5,0)
 speedLabel.BackgroundTransparency=1
-speedLabel.Text="0";speedLabel.TextColor3=accent
+speedLabel.Text="0";speedLabel.TextColor3=Color3.fromRGB(255,255,255)
 speedLabel.Font=Enum.Font.GothamBold;speedLabel.TextScaled=false;speedLabel.TextSize=15
 speedLabel.TextStrokeTransparency=0;speedLabel.TextStrokeColor3=Color3.fromRGB(0,0,0)
 end
@@ -1431,7 +1430,7 @@ local bb=Instance.new("BillboardGui")
 bb.Name="FearSpeedBB"; bb.Adornee=head; bb.Size=UDim2.new(0,100,0,30); bb.StudsOffset=Vector3.new(0,3.2,0); bb.AlwaysOnTop=true; bb.Parent=head
 local lbl=Instance.new("TextLabel",bb)
 lbl.Size=UDim2.new(1,0,1,0); lbl.BackgroundTransparency=1; lbl.Text="0.0"
-lbl.TextColor3=Color3.fromRGB(200,200,208); lbl.Font=Enum.Font.GothamBlack; lbl.TextScaled=true
+lbl.TextColor3=Color3.fromRGB(255,255,255); lbl.Font=Enum.Font.GothamBlack; lbl.TextScaled=true
 lbl.TextStrokeTransparency=0; lbl.TextStrokeColor3=Color3.new(0,0,0)
 local conn=RunService.RenderStepped:Connect(function()
 if not SpeedMeter.Enabled or not hrp or not hrp.Parent then return end
@@ -2037,9 +2036,9 @@ local _btnCorner=Instance.new("UICorner", container)
 _btnCorner.CornerRadius = UDim.new(0,12)
 
 local btnStroke = Instance.new("UIStroke", container)
-btnStroke.Color = Color3.fromRGB(128,128,128)
-btnStroke.Thickness = 1
-btnStroke.Transparency = 0.55
+btnStroke.Color = Color3.fromRGB(0,255,0)
+btnStroke.Thickness = 1.5
+btnStroke.Transparency = 0.25
 
 local btn = Instance.new("TextButton")
 btn.Size = UDim2.new(1,0,1,0)
@@ -2057,11 +2056,11 @@ local active = initialActive or false
 local function setActive(state)
 active = state
 if isToggle then
-local col = Color3.fromRGB(128,128,128)
+local col = Color3.fromRGB(0,255,0)
 container.BackgroundColor3 = active and col or Color3.fromRGB(15,12,15)
-btnStroke.Color = active and col or Color3.fromRGB(128,128,128)
-btnStroke.Transparency = active and 0.08 or 0.55
-btn.TextColor3 = active and Color3.fromRGB(16,16,18) or Color3.fromRGB(255,255,255)
+btnStroke.Color = active and col or Color3.fromRGB(0,255,0)
+btnStroke.Transparency = active and 0.05 or 0.25
+btn.TextColor3 = active and Color3.fromRGB(0,0,0) or Color3.fromRGB(255,255,255)
 end
 end
 
@@ -2072,16 +2071,16 @@ setActive(active)
 
 btn.MouseButton1Down:Connect(function()
 if not isToggle then
-local col = Color3.fromRGB(128,128,128)
+local col = Color3.fromRGB(0,255,0)
 container.BackgroundColor3 = col
 btnStroke.Color = col
-btnStroke.Transparency = 0.08
-btn.TextColor3 = Color3.fromRGB(16,16,18)
+btnStroke.Transparency = 0.05
+btn.TextColor3 = Color3.fromRGB(0,0,0)
 task.delay(0.15, function()
 if container and container.Parent then
 container.BackgroundColor3 = Color3.fromRGB(16,16,16)
-btnStroke.Color = Color3.fromRGB(128,128,128)
-btnStroke.Transparency = 0.55
+btnStroke.Color = Color3.fromRGB(0,255,0)
+btnStroke.Transparency = 0.25
 btn.TextColor3 = Color3.fromRGB(255,255,255)
 end
 end)
@@ -2330,18 +2329,15 @@ main.Size=UDim2.new(0,440,0,640);main.AnchorPoint=Vector2.new(0,0.5);main.Positi
 main.BackgroundColor3=Color3.fromRGB(0,0,0);main.BackgroundTransparency=1;main.BorderSizePixel=0;main.ClipsDescendants=true
 Instance.new("UICorner",main).CornerRadius=UDim.new(0,18)
 
--- Fondo con imagen personalizada (Panela.jpg)
-local _bgImg=Instance.new("ImageLabel",main)
+-- Fondo negro solido (sin imagen)
+local _bgImg=Instance.new("Frame",main)
 _bgImg.Name="BGImage"
 _bgImg.Size=UDim2.new(1,0,1,0)
 _bgImg.Position=UDim2.new(0,0,0,0)
 _bgImg.BackgroundColor3=Color3.fromRGB(0,0,0)
 _bgImg.BackgroundTransparency=0
 _bgImg.BorderSizePixel=0
-_bgImg.ImageTransparency=0
-_bgImg.ScaleType=Enum.ScaleType.Crop
 _bgImg.ZIndex=0
-pcall(function() _bgImg.Image=getcustomasset("Panela.jpg") end)
 Instance.new("UICorner",_bgImg).CornerRadius=UDim.new(0,18)
 
 local _mainStroke=Instance.new("UIStroke",main);_mainStroke.Color=Color3.fromRGB(128,128,128);_mainStroke.Thickness=1;_mainStroke.Transparency=0.35
@@ -2389,8 +2385,8 @@ hdr.ZIndex=2
 Instance.new("UICorner",hdr).CornerRadius=UDim.new(0,14)
 local ttl=Instance.new("TextLabel",hdr)
 ttl.Size=UDim2.new(1,-50,1,0);ttl.Position=UDim2.new(0,16,0,1)
-ttl.BackgroundTransparency=1;ttl.Text="𝑃𝑎𝑟𝑐ℎ3 𝐷𝑢𝑒𝑙𝑠"
-ttl.TextColor3=Color3.fromRGB(255,255,255);ttl.Font=Enum.Font.GothamBold;ttl.TextSize=19
+ttl.BackgroundTransparency=1;ttl.Text="Parch3 Duels"
+ttl.TextColor3=Color3.fromRGB(170,0,255);ttl.Font=Enum.Font.GothamBold;ttl.TextSize=19
 ttl.TextXAlignment=Enum.TextXAlignment.Left
 ttl.ZIndex=3
 local _ttlGlow=Instance.new("UIStroke",ttl);_ttlGlow.Color=Color3.fromRGB(128,128,128);_ttlGlow.Thickness=1;_ttlGlow.Transparency=0.55
@@ -2437,7 +2433,7 @@ for _,entry in ipairs(_G.__MiroQuickThemeButtons) do
 pcall(function()
 if entry.isToggle then entry.setActive(entry.isActive())
 elseif entry.container and entry.container.Parent then
-entry.stroke.Color=Color3.fromRGB(128,128,128); entry.stroke.Transparency=0.55
+entry.stroke.Color=Color3.fromRGB(0,255,0); entry.stroke.Transparency=0.25
 entry.container.BackgroundColor3=Color3.fromRGB(15,12,15)
 entry.button.TextColor3=Color3.fromRGB(255,255,255)
 end
@@ -2530,7 +2526,7 @@ end)
 local miniBtn=Instance.new("TextButton",gui)
 miniBtn.Size=UDim2.new(0,108,0,28);miniBtn.Position=UDim2.new(0,26,0,26)
 miniBtn.BackgroundColor3=BG2;miniBtn.BorderSizePixel=0
-miniBtn.Text="𝑃𝑎𝑟𝑐ℎ3 𝐷𝑢𝑒𝑙𝑠";miniBtn.TextColor3=Color3.fromRGB(200,200,200);miniBtn.Font=Enum.Font.GothamBold;miniBtn.TextSize=11
+miniBtn.Text="Parch3 Duels";miniBtn.TextColor3=Color3.fromRGB(170,0,255);miniBtn.Font=Enum.Font.GothamBold;miniBtn.TextSize=11
 miniBtn.ZIndex=20;miniBtn.Visible=false
 Instance.new("UICorner",miniBtn).CornerRadius=UDim.new(0,8)
 local miniStroke=Instance.new("UIStroke",miniBtn);miniStroke.Color=Color3.fromRGB(128,128,128);miniStroke.Thickness=1.2
@@ -2558,14 +2554,14 @@ menuBtn.Position=UDim2.new(0,12,0.5,-17)
 menuBtn.BackgroundColor3=Color3.fromRGB(15,15,17)
 menuBtn.BorderSizePixel=0
 menuBtn.Text="MENU"
-menuBtn.TextColor3=Color3.fromRGB(0,150,255)
+menuBtn.TextColor3=Color3.fromRGB(255,255,255)
 menuBtn.Font=Enum.Font.GothamBold
 menuBtn.TextSize=14
 menuBtn.ZIndex=50
 menuBtn.AutoButtonColor=false
 Instance.new("UICorner",menuBtn).CornerRadius=UDim.new(0,8)
 local menuStroke=Instance.new("UIStroke",menuBtn)
-menuStroke.Color=Color3.fromRGB(0,150,255)
+menuStroke.Color=Color3.fromRGB(255,255,255)
 menuStroke.Thickness=1
 menuStroke.Transparency=0.3
 menuBtn.MouseEnter:Connect(function() TS:Create(menuBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(35,35,38)}):Play() end)
@@ -3326,8 +3322,9 @@ spScreenGui.DisplayOrder=200
 spScreenGui.IgnoreGuiInset=true
 spScreenGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 spScreenGui.Parent=LP.PlayerGui
-local ACCENT      = Color3.fromRGB(128,128,128)
-local ACCENT_DARK = Color3.fromRGB(90,90,90)
+local ACCENT      = Color3.fromRGB(0,255,0)
+local ACCENT_DARK = Color3.fromRGB(0,150,0)
+local WHITE       = Color3.fromRGB(255,255,255)
 local DARK        = Color3.fromRGB(6,6,7)
 local TRACK       = Color3.fromRGB(42,42,42)
 local spFrame=Instance.new("Frame",spScreenGui)
@@ -3349,7 +3346,7 @@ spBorder.Thickness=1.5
 spBorder.Transparency=0.1
 local statLbl=Instance.new("TextLabel",spFrame)
 statLbl.Name="HudStat"; statLbl.Size=UDim2.new(0,104,1,0); statLbl.Position=UDim2.new(0,4,0,0)
-statLbl.BackgroundTransparency=1; statLbl.Text="0 FPS | 0ms"; statLbl.TextColor3=ACCENT
+statLbl.BackgroundTransparency=1; statLbl.Text="0 FPS | 0ms"; statLbl.TextColor3=WHITE
 statLbl.Font=Enum.Font.GothamBold; statLbl.TextSize=10; statLbl.TextXAlignment=Enum.TextXAlignment.Center; statLbl.ZIndex=304
 local divider=Instance.new("Frame",spFrame)
 divider.Size=UDim2.new(0,1,0,14); divider.Position=UDim2.new(0,108,0.5,-7)
@@ -3367,15 +3364,15 @@ local fillGrad=Instance.new("UIGradient",spFill)
 fillGrad.Color=ColorSequence.new(ACCENT,ACCENT_DARK); fillGrad.Rotation=90
 local stealLbl=Instance.new("TextLabel",center)
 stealLbl.Size=UDim2.new(1,-20,1,0); stealLbl.Position=UDim2.new(0,12,0,0)
-stealLbl.BackgroundTransparency=1; stealLbl.Text="𝑃𝑎𝑟𝑐ℎ3  |        Auto Steal"; stealLbl.TextColor3=ACCENT
+stealLbl.BackgroundTransparency=1; stealLbl.Text="Parch3  |        Auto Steal"; stealLbl.TextColor3=WHITE
 stealLbl.Font=Enum.Font.GothamBlack; stealLbl.TextSize=11; stealLbl.TextXAlignment=Enum.TextXAlignment.Left; stealLbl.ZIndex=305
 local spPct=Instance.new("TextLabel",center)
 spPct.Size=UDim2.new(0,60,1,0); spPct.Position=UDim2.new(1,-66,0,0)
-spPct.BackgroundTransparency=1; spPct.Text="0%"; spPct.TextColor3=ACCENT
+spPct.BackgroundTransparency=1; spPct.Text="0%"; spPct.TextColor3=WHITE
 spPct.Font=Enum.Font.GothamBold; spPct.TextSize=10; spPct.TextXAlignment=Enum.TextXAlignment.Right; spPct.ZIndex=305
 local spRad=Instance.new("TextLabel",spFrame)
 spRad.Size=UDim2.new(0,104,0,12); spRad.Position=UDim2.new(0,4,1,-13)
-spRad.BackgroundTransparency=1; spRad.Text="Radius: "..tostring(Steal.StealRadius); spRad.TextColor3=ACCENT
+spRad.BackgroundTransparency=1; spRad.Text="Radius: "..tostring(Steal.StealRadius); spRad.TextColor3=WHITE
 spRad.Font=Enum.Font.GothamBold; spRad.TextSize=8; spRad.TextXAlignment=Enum.TextXAlignment.Center; spRad.ZIndex=304
 spRad.Visible=false
 progressRadLbl=spRad
@@ -3418,12 +3415,18 @@ end
 end)
 end
 local function applyAutoGrabColor(col)
-if typeof(col)~="Color3" then return end
-ACCENT=col
-spBorder.Color=col; statLbl.TextColor3=col; divider.BackgroundColor3=col
-centerStroke.Color=col; stealLbl.TextColor3=col; spPct.TextColor3=col; spRad.TextColor3=col
-spFill.BackgroundColor3=col
-fillGrad.Color=ColorSequence.new(col,Color3.new(math.clamp(col.R*0.58,0,1),math.clamp(col.G*0.58,0,1),math.clamp(col.B*0.58,0,1)))
+local green = Color3.fromRGB(0,255,0)
+local white = Color3.fromRGB(255,255,255)
+ACCENT = green
+spBorder.Color=green
+statLbl.TextColor3=white
+divider.BackgroundColor3=green
+centerStroke.Color=green
+stealLbl.TextColor3=white
+spPct.TextColor3=white
+spRad.TextColor3=white
+spFill.BackgroundColor3=green
+fillGrad.Color=ColorSequence.new(green,Color3.fromRGB(0,150,0))
 end
 _G.__Miro_applyAutoGrabColor=applyAutoGrabColor
 local _spWasDragged=false
@@ -3434,7 +3437,6 @@ dragging=true;_spWasDragged=false;dragStart=inp.Position;startPos=spFrame.Positi
 inp.Changed:Connect(function() if inp.UserInputState==Enum.UserInputState.End then dragging=false end end)
 end
 end)
--- (click-to-open panel removed from Auto Steal bar)
 UIS.InputChanged:Connect(function(inp)
 if not dragging then return end
 if inp.UserInputType==Enum.UserInputType.MouseMovement or inp.UserInputType==Enum.UserInputType.Touch then
@@ -3577,7 +3579,7 @@ task.spawn(function()
 	img.Size = UDim2.new(1,0,1,0); img.BackgroundTransparency = 1; img.Image = IMG; img.ScaleType = Enum.ScaleType.Crop; img.ImageTransparency = 1; img.ZIndex = 2
 	local ttl = Instance.new("TextLabel", sg)
 	ttl.Size = UDim2.new(1,0,0,90); ttl.Position = UDim2.new(0,0,0.5,-45)
-	ttl.BackgroundTransparency = 1; ttl.Text = "𝑃𝑎𝑟𝑐ℎ3 𝐷𝑢𝑒𝑙𝑠"; ttl.TextColor3 = Color3.fromRGB(255,255,255)
+	ttl.BackgroundTransparency = 1; ttl.Text = "Parch3 Duels"; ttl.TextColor3 = Color3.fromRGB(170,0,255)
 	ttl.Font = Enum.Font.GothamBlack; ttl.TextSize = 64
 	ttl.TextTransparency = 1; ttl.TextStrokeColor3 = Color3.fromRGB(0,0,0); ttl.TextStrokeTransparency = 1; ttl.ZIndex = 3
 	local tScale = Instance.new("UIScale", ttl); tScale.Scale = 0.86
