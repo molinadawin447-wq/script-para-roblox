@@ -1,4 +1,4 @@
--- Parch3 Duels | LocalScript
+-- Parch3 Duels | LocalScript (Actualizado)
 repeat task.wait() until game:IsLoaded()
 local Players,RunService,UIS,TS,Lighting,HS = game:GetService("Players"),game:GetService("RunService"),game:GetService("UserInputService"),game:GetService("TweenService"),game:GetService("Lighting"),game:GetService("HttpService")
 local LP = Players.LocalPlayer
@@ -1719,7 +1719,7 @@ dropBrainrotKey=ks(KB.DropBrainrot),autoLeftKey=ks(KB.AutoLeft),autoRightKey=ks(
 autoBatKey=ks(KB.AutoBat),laggerToggleKey=ks(KB.LaggerToggle),tpFloorKey=ks(KB.TPFloor),instaResetKey=ks(KB.InstaReset),guiHideKey=ks(KB.GuiHide),
 speedToggleKey=ks(KB.SpeedToggle),antiBatKey=ks(KB.AntiBat),dysncKey=ks(KB.Dysnc),
 grabRadius=Steal.StealRadius,stealDuration=Steal.StealDuration,stealMode=Steal.Mode,halfFireRange=Steal.HalfFireRange,radiiNormal=(_G.__StealRadii and _G.__StealRadii.Normal) or 62,radiiSemi=(_G.__StealRadii and _G.__StealRadii.Semi) or 9,dropType=currentDropType,
-antiRagdoll=antiRagdollEnabled,safeMode=safeModeEnabled,guiSize=0.55,introEnabled=(_G.__LonelyIntroOn~=false),autoStealEnabled=Steal.AutoStealEnabled,espEnabled=(espEnabled==true),
+antiRagdoll=antiRagdollEnabled,safeMode=safeModeEnabled,guiSize=0.6,introEnabled=(_G.__LonelyIntroOn~=false),autoStealEnabled=Steal.AutoStealEnabled,espEnabled=(espEnabled==true),
 infiniteJump=infJumpEnabled,infJumpMode=infJumpMode,medusaCounter=medusaCounterEnabled,medReset=_G._MedReset and _G._MedReset.enabled or false,
 batCounter=batCounterEnabled,mirrorTPDown=(_G.__MirrorTPOn==true),
 skyMode=_G.__SkyMode or "Vaporwave",animPack=selectedAnimationPack,carryMode=speedMode,laggerMode=laggerToggled,laggerCarryMode=laggerPhase==2,autoCarrySpeed=autoCarrySpeedEnabled,laggerSpeed=LAGGER_SPEED,laggerCarrySpeed=LAGGER_CARRY_SPEED,
@@ -1741,7 +1741,7 @@ task.spawn(function() while task.wait(5) do saveConfig() end end)
 local Vis={}
 local Boxes={}
 local function refreshSpeedModeLabel()
-if modeValLbl then modeValLbl.Text=laggerToggled and (laggerPhase==2 and "Lagger Carry" or "Lagger Normal") or (speedMode and "Carry" or "Normal") end
+if modeValLbl then modeValLbl.Text=laggerToggled and (laggerPhase==2 and "lagger 2" or "lagger 1") or (speedMode and "Carry" or "Normal") end
 end
 local function toggleCarryMode()
 if laggerToggled then laggerToggled=false; laggerPhase=0; speedMode=true
@@ -2036,7 +2036,7 @@ local _btnCorner=Instance.new("UICorner", container)
 _btnCorner.CornerRadius = UDim.new(0,12)
 
 local btnStroke = Instance.new("UIStroke", container)
-btnStroke.Color = Color3.fromRGB(0,255,0)
+btnStroke.Color = Color3.fromRGB(255,0,0) -- Rojo solicitado
 btnStroke.Thickness = 1.5
 btnStroke.Transparency = 0.25
 
@@ -2056,9 +2056,9 @@ local active = initialActive or false
 local function setActive(state)
 active = state
 if isToggle then
-local col = Color3.fromRGB(0,255,0)
+local col = Color3.fromRGB(255,0,0) -- Rojo
 container.BackgroundColor3 = active and col or Color3.fromRGB(15,12,15)
-btnStroke.Color = active and col or Color3.fromRGB(0,255,0)
+btnStroke.Color = active and col or Color3.fromRGB(255,0,0)
 btnStroke.Transparency = active and 0.05 or 0.25
 btn.TextColor3 = active and Color3.fromRGB(0,0,0) or Color3.fromRGB(255,255,255)
 end
@@ -2071,7 +2071,7 @@ setActive(active)
 
 btn.MouseButton1Down:Connect(function()
 if not isToggle then
-local col = Color3.fromRGB(0,255,0)
+local col = Color3.fromRGB(255,0,0)
 container.BackgroundColor3 = col
 btnStroke.Color = col
 btnStroke.Transparency = 0.05
@@ -2079,7 +2079,7 @@ btn.TextColor3 = Color3.fromRGB(0,0,0)
 task.delay(0.15, function()
 if container and container.Parent then
 container.BackgroundColor3 = Color3.fromRGB(16,16,16)
-btnStroke.Color = Color3.fromRGB(0,255,0)
+btnStroke.Color = Color3.fromRGB(255,0,0)
 btnStroke.Transparency = 0.25
 btn.TextColor3 = Color3.fromRGB(255,255,255)
 end
@@ -2134,7 +2134,7 @@ saveConfig()
 end, autoBatEnabled)
 local row4 = Instance.new("Frame"); row4.Size = UDim2.new(1, 0, 0, 59); row4.BackgroundTransparency = 1; row4.Parent = mainFrame
 local row4Layout = Instance.new("UIListLayout"); row4Layout.Parent = row4; row4Layout.FillDirection = Enum.FillDirection.Horizontal; row4Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center; row4Layout.Padding = UDim.new(0, 12); row4Layout.SortOrder = Enum.SortOrder.LayoutOrder
-local antiBatBtn = createButton("ANTI BAT\nBYPASS", true, function(state, setActive)
+local antiBatBtn = createButton("TP BAT\nBYPASS", true, function(state, setActive)
 toggleAntiBat(); setActive(antiBatActive)
 end, antiBatActive)
 local prevABV=setAntiBatVisual
@@ -2144,11 +2144,11 @@ antiBatBtn.BG.AnchorPoint = Vector2.new(0,0)
 antiBatBtn.BG.Position = UDim2.new(1, -250, 0.5, -102)
 makeButtonDraggable(antiBatBtn.BG,false,antiBatBtn.Btn)
 local instaResetBtn = createButton("INSTANT\nRESET", false, function(setActive) cursedInstaReset() end, false)
-local laggerNormalBtn = createButton("LAGGER\nNORMAL", true, function(state, setActive)
+local laggerNormalBtn = createButton("LAGGER\n1", true, function(state, setActive)
 toggleLaggerNormal(); saveConfig()
 end, laggerToggled and laggerPhase == 1)
 Vis.laggerNormal = function(s) laggerNormalBtn.setActive(s) end
-local laggerCarryBtn = createButton("LAGGER\nCARRY", true, function(state, setActive)
+local laggerCarryBtn = createButton("LAGGER\n2", true, function(state, setActive)
 toggleLaggerCarry(); saveConfig()
 end, laggerToggled and laggerPhase == 2)
 Vis.laggerCarry = function(s) laggerCarryBtn.setActive(s) end
@@ -2310,9 +2310,9 @@ local BG    = Color3.fromRGB(0,0,0)
 local BG2   = Color3.fromRGB(15,15,17)
 local CARD  = Color3.fromRGB(24,24,26)
 local HOV   = Color3.fromRGB(38,38,41)
-local RED   = Color3.fromRGB(128,128,128)
-local REDDIM= Color3.fromRGB(90,90,90)
-local STROKE= Color3.fromRGB(128,128,128)
+local RED   = Color3.fromRGB(255,0,0) -- Cambiado a rojo puro
+local REDDIM= Color3.fromRGB(180,0,0)
+local STROKE= Color3.fromRGB(255,0,0) -- Cambiado a rojo
 local W     = Color3.fromRGB(240,240,240)
 local DIM   = Color3.fromRGB(150,150,150)
 local INP   = Color3.fromRGB(17,17,19)
@@ -2329,26 +2329,25 @@ main.Size=UDim2.new(0,440,0,640);main.AnchorPoint=Vector2.new(0,0.5);main.Positi
 main.BackgroundColor3=Color3.fromRGB(0,0,0);main.BackgroundTransparency=1;main.BorderSizePixel=0;main.ClipsDescendants=true
 Instance.new("UICorner",main).CornerRadius=UDim.new(0,18)
 
--- Fondo negro solido (sin imagen)
-local _bgImg=Instance.new("Frame",main)
+local _bgImg=Instance.new("ImageLabel",main)
 _bgImg.Name="BGImage"
 _bgImg.Size=UDim2.new(1,0,1,0)
 _bgImg.Position=UDim2.new(0,0,0,0)
-_bgImg.BackgroundColor3=Color3.fromRGB(0,0,0)
-_bgImg.BackgroundTransparency=0
-_bgImg.BorderSizePixel=0
+_bgImg.BackgroundTransparency=1
+_bgImg.Image="" -- Aquí se asignarán los fondos dinámicamente
+_bgImg.ScaleType=Enum.ScaleType.Crop
 _bgImg.ZIndex=0
 Instance.new("UICorner",_bgImg).CornerRadius=UDim.new(0,18)
 
-local _mainStroke=Instance.new("UIStroke",main);_mainStroke.Color=Color3.fromRGB(128,128,128);_mainStroke.Thickness=1;_mainStroke.Transparency=0.35
+local _mainStroke=Instance.new("UIStroke",main);_mainStroke.Color=Color3.fromRGB(255,0,0);_mainStroke.Thickness=1;_mainStroke.Transparency=0.35
 
 local _mainScale=Instance.new("UIScale",main)
-_G.__Miro_guiSize = 0.55
-_mainScale.Scale=0.55*0.9
-TS:Create(_mainScale,TweenInfo.new(0.4,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Scale=0.55}):Play()
+_G.__Miro_guiSize = 0.6 -- Cambiado a 60%
+_mainScale.Scale=0.6*0.9
+TS:Create(_mainScale,TweenInfo.new(0.4,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Scale=0.6}):Play()
 _G.__Miro_setGuiSize=function(v)
-_G.__Miro_guiSize=0.55
-_mainScale.Scale=0.55
+_G.__Miro_guiSize=0.6
+_mainScale.Scale=0.6
 end
 
 local function drag(f)
@@ -2386,10 +2385,10 @@ Instance.new("UICorner",hdr).CornerRadius=UDim.new(0,14)
 local ttl=Instance.new("TextLabel",hdr)
 ttl.Size=UDim2.new(1,-50,1,0);ttl.Position=UDim2.new(0,16,0,1)
 ttl.BackgroundTransparency=1;ttl.Text="Parch3 Duels"
-ttl.TextColor3=Color3.fromRGB(170,0,255);ttl.Font=Enum.Font.GothamBold;ttl.TextSize=19
+ttl.TextColor3=Color3.fromRGB(255,0,0);ttl.Font=Enum.Font.GothamBold;ttl.TextSize=19
 ttl.TextXAlignment=Enum.TextXAlignment.Left
 ttl.ZIndex=3
-local _ttlGlow=Instance.new("UIStroke",ttl);_ttlGlow.Color=Color3.fromRGB(128,128,128);_ttlGlow.Thickness=1;_ttlGlow.Transparency=0.55
+local _ttlGlow=Instance.new("UIStroke",ttl);_ttlGlow.Color=Color3.fromRGB(255,0,0);_ttlGlow.Thickness=1;_ttlGlow.Transparency=0.55
 
 local closeBtn=Instance.new("TextButton",hdr)
 closeBtn.Size=UDim2.new(0,28,0,28);closeBtn.Position=UDim2.new(1,-36,0.5,-14)
@@ -2397,28 +2396,28 @@ closeBtn.BackgroundColor3=Color3.fromRGB(20,20,22);closeBtn.BorderSizePixel=0
 closeBtn.Text="—";closeBtn.TextColor3=DIM;closeBtn.Font=Enum.Font.GothamBold;closeBtn.TextSize=12
 closeBtn.ZIndex=3
 Instance.new("UICorner",closeBtn).CornerRadius=UDim.new(1,0)
-local cbStroke=Instance.new("UIStroke",closeBtn);cbStroke.Color=Color3.fromRGB(128,128,128);cbStroke.Thickness=1;cbStroke.Transparency=0.5
+local cbStroke=Instance.new("UIStroke",closeBtn);cbStroke.Color=Color3.fromRGB(255,0,0);cbStroke.Thickness=1;cbStroke.Transparency=0.5
 closeBtn.MouseEnter:Connect(function() TS:Create(closeBtn,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(48,48,52),TextColor3=Color3.fromRGB(220,220,220)}):Play() end)
 closeBtn.MouseLeave:Connect(function() TS:Create(closeBtn,TweenInfo.new(0.15),{BackgroundColor3=Color3.fromRGB(20,20,22),TextColor3=DIM}):Play() end)
 local hdrDiv=Instance.new("Frame",main)
 hdrDiv.Size=UDim2.new(1,-24,0,1);hdrDiv.Position=UDim2.new(0,12,0,46)
-hdrDiv.BackgroundColor3=Color3.fromRGB(128,128,128);hdrDiv.BackgroundTransparency=0.6;hdrDiv.BorderSizePixel=0;hdrDiv.ZIndex=3
+hdrDiv.BackgroundColor3=Color3.fromRGB(255,0,0);hdrDiv.BackgroundTransparency=0.6;hdrDiv.BorderSizePixel=0;hdrDiv.ZIndex=3
 local accentLine=Instance.new("Frame",main)
 accentLine.Size=UDim2.new(0,44,0,2);accentLine.Position=UDim2.new(0,12,0,45)
-accentLine.BackgroundColor3=Color3.fromRGB(128,128,128);accentLine.BorderSizePixel=0;accentLine.ZIndex=4
+accentLine.BackgroundColor3=Color3.fromRGB(255,0,0);accentLine.BorderSizePixel=0;accentLine.ZIndex=4
 Instance.new("UICorner",accentLine).CornerRadius=UDim.new(1,0)
 
-local MIRO_THEMES={{name="Gray",color=Color3.fromRGB(128,128,128),image=""}}
+local MIRO_THEMES={{name="Red",color=Color3.fromRGB(255,0,0),image=""}}
 local _miroThemeIndex=1
 local _miroThemeHooks={}
 _Miro_onTheme=function(fn)
 table.insert(_miroThemeHooks,fn)
-pcall(fn,Color3.fromRGB(128,128,128))
+pcall(fn,Color3.fromRGB(255,0,0))
 end
 local function applyMiroColorTheme(index)
 _miroThemeIndex=1
 _G.__Miro_themeIndex=1
-local col=Color3.fromRGB(128,128,128)
+local col=Color3.fromRGB(255,0,0)
 _G.__Miro_curThemeCol=col
 _ttlGlow.Color=col
 _mainStroke.Color=col
@@ -2427,36 +2426,6 @@ accentLine.BackgroundColor3=col
 cbStroke.Color=col
 for _,fn in ipairs(_miroThemeHooks) do pcall(fn,col) end
 if _G.__Miro_applyAutoGrabColor then pcall(_G.__Miro_applyAutoGrabColor,col) end
-_G.__Miro_applyTheme=applyMiroColorTheme
-if _G.__MiroQuickThemeButtons then
-for _,entry in ipairs(_G.__MiroQuickThemeButtons) do
-pcall(function()
-if entry.isToggle then entry.setActive(entry.isActive())
-elseif entry.container and entry.container.Parent then
-entry.stroke.Color=Color3.fromRGB(0,255,0); entry.stroke.Transparency=0.25
-entry.container.BackgroundColor3=Color3.fromRGB(15,12,15)
-entry.button.TextColor3=Color3.fromRGB(255,255,255)
-end
-end)
-end
-end
-pcall(function()
-for _,obj in ipairs(main:GetDescendants()) do
-if obj:IsA("UIStroke") then obj.Color=Color3.fromRGB(128,128,128)
-elseif obj:IsA("TextButton") then
-local bg=obj.BackgroundColor3
-local brightness=(bg.R+bg.G+bg.B)/3
-local isActive=brightness>0.28 and obj.BackgroundTransparency<0.9
-if isActive then obj.BackgroundColor3=Color3.fromRGB(128,128,128); obj.TextColor3=Color3.fromRGB(16,16,18)
-else obj.TextColor3=Color3.fromRGB(220,220,220) end
-elseif obj:IsA("TextBox") then obj.TextColor3=Color3.fromRGB(220,220,220); obj.PlaceholderColor3=Color3.fromRGB(150,150,150)
-elseif obj:IsA("ImageButton") then obj.ImageColor3=Color3.fromRGB(128,128,128)
-elseif obj:IsA("Frame") then
-local n=string.lower(obj.Name)
-if n:find("accent") or n:find("fill") or n:find("indicator") or n:find("active") or n:find("selected") then obj.BackgroundColor3=Color3.fromRGB(128,128,128) end
-end
-end
-end)
 end
 local TABS = {"Combat","Misc","Movement","Settings"}
 local SECTION_TAB = {
@@ -2478,11 +2447,11 @@ sidebar.BackgroundColor3=Color3.fromRGB(0,0,0)
 sidebar.BackgroundTransparency=1
 sidebar.BorderSizePixel=0;sidebar.ZIndex=4
 Instance.new("UICorner",sidebar).CornerRadius=UDim.new(0,18)
-local _sbStroke=Instance.new("UIStroke",sidebar);_sbStroke.Color=Color3.fromRGB(75,75,75);_sbStroke.Thickness=1;_sbStroke.Transparency=1
+local _sbStroke=Instance.new("UIStroke",sidebar);_sbStroke.Color=Color3.fromRGB(255,0,0);_sbStroke.Thickness=1;_sbStroke.Transparency=1
 do
 local rail=Instance.new("Frame",sidebar)
 rail.Name="Rail";rail.Size=UDim2.new(1,-10,0,2);rail.Position=UDim2.new(0,5,1,0)
-rail.BackgroundColor3=Color3.fromRGB(128,128,128);rail.BorderSizePixel=0;rail.ZIndex=3
+rail.BackgroundColor3=Color3.fromRGB(255,0,0);rail.BorderSizePixel=0;rail.ZIndex=3
 Instance.new("UICorner",rail).CornerRadius=UDim.new(1,0)
 end
 local tabBar=Instance.new("Frame",sidebar)
@@ -2501,7 +2470,7 @@ _statImg.Size=UDim2.new(1,0,1,0);_statImg.BackgroundTransparency=1
 _statImg.Image="rbxassetid://126465363386821";_statImg.ScaleType=Enum.ScaleType.Fit
 _statImg.ImageTransparency=0.15;_statImg.ZIndex=5
 Instance.new("UICorner",_statImg).CornerRadius=UDim.new(0,10)
-local statStroke=Instance.new("UIStroke",statBox);statStroke.Color=Color3.fromRGB(60,50,80);statStroke.Thickness=1;statStroke.Transparency=0.3
+local statStroke=Instance.new("UIStroke",statBox);statStroke.Color=Color3.fromRGB(255,0,0);statStroke.Thickness=1;statStroke.Transparency=0.3
 local fpsLbl=Instance.new("TextLabel",statBox);fpsLbl.Size=UDim2.new(1,-16,0,20);fpsLbl.Position=UDim2.new(0,12,0,5)
 fpsLbl.BackgroundTransparency=1;fpsLbl.Text="FPS: --";fpsLbl.TextColor3=Color3.fromRGB(255,255,255)
 fpsLbl.Font=Enum.Font.GothamBold;fpsLbl.TextSize=12;fpsLbl.TextXAlignment=Enum.TextXAlignment.Left;fpsLbl.ZIndex=6
@@ -2526,46 +2495,46 @@ end)
 local miniBtn=Instance.new("TextButton",gui)
 miniBtn.Size=UDim2.new(0,108,0,28);miniBtn.Position=UDim2.new(0,26,0,26)
 miniBtn.BackgroundColor3=BG2;miniBtn.BorderSizePixel=0
-miniBtn.Text="Parch3 Duels";miniBtn.TextColor3=Color3.fromRGB(170,0,255);miniBtn.Font=Enum.Font.GothamBold;miniBtn.TextSize=11
+miniBtn.Text="Parch3 Duels";miniBtn.TextColor3=Color3.fromRGB(255,0,0);miniBtn.Font=Enum.Font.GothamBold;miniBtn.TextSize=11
 miniBtn.ZIndex=20;miniBtn.Visible=false
 Instance.new("UICorner",miniBtn).CornerRadius=UDim.new(0,8)
-local miniStroke=Instance.new("UIStroke",miniBtn);miniStroke.Color=Color3.fromRGB(128,128,128);miniStroke.Thickness=1.2
+local miniStroke=Instance.new("UIStroke",miniBtn);miniStroke.Color=Color3.fromRGB(255,0,0);miniStroke.Thickness=1.2
 drag(miniBtn)
 miniBtn.MouseEnter:Connect(function() TS:Create(miniBtn,TweenInfo.new(0.1),{BackgroundColor3=HOV}):Play() end)
 miniBtn.MouseLeave:Connect(function() TS:Create(miniBtn,TweenInfo.new(0.1),{BackgroundColor3=BG2}):Play() end)
 local function showGui()
 main.Visible=true;miniBtn.Visible=false
-_mainScale.Scale=0.55*0.9
-TS:Create(_mainScale,TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=0.55}):Play()
+_mainScale.Scale=0.6*0.9
+TS:Create(_mainScale,TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=0.6}):Play()
 end
 local function hideGui()
-local tw=TS:Create(_mainScale,TweenInfo.new(0.18,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Scale=0.55*0.9})
+local tw=TS:Create(_mainScale,TweenInfo.new(0.18,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Scale=0.6*0.9})
 tw:Play();tw.Completed:Wait()
 main.Visible=false;miniBtn.Visible=false
 end
 closeBtn.MouseButton1Click:Connect(hideGui)
 miniBtn.MouseButton1Click:Connect(showGui)
 
--- ===== MENU button on the LEFT side of the screen =====
+-- ===== MENU button on the LEFT side (Actualizado a "parch3 duels" en rojo con fondo blanco) =====
 local menuBtn=Instance.new("TextButton",gui)
 menuBtn.Name="MenuBtn"
-menuBtn.Size=UDim2.new(0,82,0,34)
+menuBtn.Size=UDim2.new(0,100,0,34)
 menuBtn.Position=UDim2.new(0,12,0.5,-17)
-menuBtn.BackgroundColor3=Color3.fromRGB(15,15,17)
+menuBtn.BackgroundColor3=Color3.fromRGB(255,255,255) -- Fondo blanco
 menuBtn.BorderSizePixel=0
-menuBtn.Text="MENU"
-menuBtn.TextColor3=Color3.fromRGB(255,255,255)
+menuBtn.Text="parch3 duels"
+menuBtn.TextColor3=Color3.fromRGB(255,0,0) -- Letras rojas
 menuBtn.Font=Enum.Font.GothamBold
-menuBtn.TextSize=14
+menuBtn.TextSize=13
 menuBtn.ZIndex=50
 menuBtn.AutoButtonColor=false
 Instance.new("UICorner",menuBtn).CornerRadius=UDim.new(0,8)
 local menuStroke=Instance.new("UIStroke",menuBtn)
-menuStroke.Color=Color3.fromRGB(255,255,255)
+menuStroke.Color=Color3.fromRGB(255,0,0)
 menuStroke.Thickness=1
 menuStroke.Transparency=0.3
-menuBtn.MouseEnter:Connect(function() TS:Create(menuBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(35,35,38)}):Play() end)
-menuBtn.MouseLeave:Connect(function() TS:Create(menuBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(15,15,17)}):Play() end)
+menuBtn.MouseEnter:Connect(function() TS:Create(menuBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(230,230,230)}):Play() end)
+menuBtn.MouseLeave:Connect(function() TS:Create(menuBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(255,255,255)}):Play() end)
 menuBtn.Activated:Connect(function()
 if main.Visible then hideGui() else showGui() end
 end)
@@ -2599,7 +2568,7 @@ for tn,b in pairs(tabBtns) do
 local on=(tn==name)
 TS:Create(b.bg,TweenInfo.new(0.2,Enum.EasingStyle.Quad),{BackgroundTransparency=on and 0.28 or 0.72,BackgroundColor3=Color3.fromRGB(5,5,8)}):Play()
 TS:Create(b.lbl,TweenInfo.new(0.2,Enum.EasingStyle.Quad),{TextColor3=on and Color3.fromRGB(255,255,255) or Color3.fromRGB(170,170,180)}):Play()
-TS:Create(b.stroke,TweenInfo.new(0.2,Enum.EasingStyle.Quad),{Transparency=on and 0.05 or 0.52,Color=Color3.fromRGB(128,128,128)}):Play()
+TS:Create(b.stroke,TweenInfo.new(0.2,Enum.EasingStyle.Quad),{Transparency=on and 0.05 or 0.52,Color=Color3.fromRGB(255,0,0)}):Play()
 if b.fill then TS:Create(b.fill,TweenInfo.new(0.28,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,0,1,0)}):Play() end
 end
 sf.CanvasPosition=Vector2.new(0,0)
@@ -2609,11 +2578,11 @@ local bg=Instance.new("Frame",tabBar)
 bg.Size=UDim2.new(0,(440-24-5*(#TABS-1))/#TABS,1,0);bg.BackgroundColor3=Color3.fromRGB(5,5,8);bg.BackgroundTransparency=0.72;bg.BorderSizePixel=0;bg.LayoutOrder=i;bg.ZIndex=5
 bg.ClipsDescendants=true
 Instance.new("UICorner",bg).CornerRadius=UDim.new(0,7)
-local stroke=Instance.new("UIStroke",bg);stroke.Color=Color3.fromRGB(128,128,128);stroke.Thickness=1;stroke.Transparency=0.5
+local stroke=Instance.new("UIStroke",bg);stroke.Color=Color3.fromRGB(255,0,0);stroke.Thickness=1;stroke.Transparency=0.5
 stroke.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
 local fill=Instance.new("Frame",bg)
 fill.Name="Fill";fill.Size=UDim2.new(0,0,1,0);fill.Position=UDim2.new(0,0,0,0)
-fill.BackgroundColor3=Color3.fromRGB(128,128,128);fill.BorderSizePixel=0;fill.ZIndex=6
+fill.BackgroundColor3=Color3.fromRGB(255,0,0);fill.BorderSizePixel=0;fill.ZIndex=6
 Instance.new("UICorner",fill).CornerRadius=UDim.new(0,4)
 local lbl=Instance.new("TextLabel",bg);lbl.Size=UDim2.new(1,0,1,0);lbl.Position=UDim2.new(0,0,0,0);lbl.BackgroundTransparency=1
 lbl.Text=tn;lbl.TextColor3=Color3.fromRGB(170,170,180);lbl.Font=Enum.Font.GothamBlack;lbl.TextSize=11;lbl.TextXAlignment=Enum.TextXAlignment.Center;lbl.ZIndex=7
@@ -2639,38 +2608,64 @@ local tab=SECTION_TAB[txt] or currentTab or TABS[1]
 curPage=pages[tab]
 local f=Instance.new("Frame",curPage);f.Size=UDim2.new(1,0,0,17);f.BackgroundTransparency=1;f.BorderSizePixel=0;f.LayoutOrder=LO()
 local tick=Instance.new("Frame",f);tick.Size=UDim2.new(0,10,0,2);tick.Position=UDim2.new(0,8,0.5,-1)
-tick.BackgroundColor3=Color3.fromRGB(160,160,160);tick.BorderSizePixel=0
+tick.BackgroundColor3=Color3.fromRGB(255,0,0);tick.BorderSizePixel=0
 Instance.new("UICorner",tick).CornerRadius=UDim.new(1,0)
 local l=Instance.new("TextLabel",f);l.Size=UDim2.new(1,-30,1,0);l.Position=UDim2.new(0,24,0,0)
-l.BackgroundTransparency=1;l.Text=txt:upper();l.TextColor3=Color3.fromRGB(135,135,145)
+l.BackgroundTransparency=1;l.Text=txt:upper();l.TextColor3=Color3.fromRGB(255,100,100)
 l.Font=Enum.Font.GothamBold;l.TextSize=10;l.TextXAlignment=Enum.TextXAlignment.Left
 end
+
+-- Función para aplicar diseño personalizado a los botones derechos (Fondo blanco, letras negras, sombra de arriba hacia abajo, sin bordes)
+local function applyRightButtonTheme(f)
+    f.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    f.BackgroundTransparency = 0
+    local stroke = f:FindFirstChildOfClass("UIStroke")
+    if stroke then stroke:Destroy() end -- Quitar bordes
+    
+    local gradient = Instance.new("UIGradient", f)
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1.0, Color3.fromRGB(140, 140, 140)) -- Sombra negra desgastada de arriba a abajo
+    }
+    gradient.Rotation = 90
+    
+    for _, child in ipairs(f:GetDescendants()) do
+        if child:IsA("TextLabel") or child:IsA("TextButton") then
+            child.TextColor3 = Color3.fromRGB(0, 0, 0) -- Letras negras
+        end
+    end
+end
+
 local function mkRow(h)
 local f=Instance.new("Frame",curPage);f.Size=UDim2.new(1,-2,0,h or 40)
 f.BackgroundColor3=Color3.fromRGB(255,255,255);f.BackgroundTransparency=0.82
 f.BorderSizePixel=0;f.LayoutOrder=LO()
 f.ZIndex=6
 Instance.new("UICorner",f).CornerRadius=UDim.new(0,10)
-local rs=Instance.new("UIStroke",f);rs.Color=Color3.fromRGB(255,255,255);rs.Thickness=1;rs.Transparency=0.6
+local rs=Instance.new("UIStroke",f);rs.Color=Color3.fromRGB(255,0,0);rs.Thickness=1;rs.Transparency=0.6
+
+-- Aplicar la modificación solicitada a los botones de la derecha (Filas generales convertidas a estilo derecho según requerimiento)
+applyRightButtonTheme(f)
+
 f.MouseEnter:Connect(function() TS:Create(f,TweenInfo.new(0.08),{BackgroundTransparency=0.72}):Play() end)
 f.MouseLeave:Connect(function() TS:Create(f,TweenInfo.new(0.08),{BackgroundTransparency=0.82}):Play() end)
 return f
 end
 local function mkLabel(row,txt)
 local l=Instance.new("TextLabel",row);l.Size=UDim2.new(0.58,0,1,0);l.Position=UDim2.new(0,11,0,0)
-l.BackgroundTransparency=1;l.Text=txt;l.TextColor3=Color3.new(1,1,1)
+l.BackgroundTransparency=1;l.Text=txt;l.TextColor3=Color3.fromRGB(0,0,0) -- Letras negras
 l.Font=Enum.Font.GothamBold;l.TextSize=11;l.TextXAlignment=Enum.TextXAlignment.Left
 l.ZIndex=8
 end
 local function mkPill(row,offset)
 local pill=Instance.new("Frame",row);pill.Size=UDim2.new(0,34,0,18)
 pill.Position=UDim2.new(1,-(offset or 56),0.5,-9)
-pill.BackgroundColor3=Color3.fromRGB(24,24,30);pill.BackgroundTransparency=0.2
+pill.BackgroundColor3=Color3.fromRGB(240,240,240);pill.BackgroundTransparency=0.2
 pill.BorderSizePixel=0;pill.ZIndex=3
 Instance.new("UICorner",pill).CornerRadius=UDim.new(0,9)
-local ps=Instance.new("UIStroke",pill);ps.Color=Color3.fromRGB(120,120,130);ps.Thickness=1;ps.Transparency=0.45
+local ps=Instance.new("UIStroke",pill);ps.Color=Color3.fromRGB(255,0,0);ps.Thickness=1;ps.Transparency=0.45
 local dot=Instance.new("Frame",pill);dot.Size=UDim2.new(0,13,0,13);dot.Position=UDim2.new(0,3,0.5,-6)
-dot.BackgroundColor3=Color3.fromRGB(235,235,240);dot.BackgroundTransparency=0
+dot.BackgroundColor3=Color3.fromRGB(255,0,0);dot.BackgroundTransparency=0
 dot.BorderSizePixel=0;dot.ZIndex=4
 Instance.new("UICorner",dot).CornerRadius=UDim.new(1,0)
 local shine=Instance.new("Frame",dot);shine.Size=UDim2.new(1,-4,0,4);shine.Position=UDim2.new(0,2,0,2)
@@ -2681,19 +2676,20 @@ return pill,dot
 end
 local function animPill(pill,dot,on)
 TS:Create(pill,TweenInfo.new(0.18,Enum.EasingStyle.Quad),{
-BackgroundColor3=on and Color3.fromRGB(60,60,60) or Color3.fromRGB(24,24,30),
+BackgroundColor3=on and Color3.fromRGB(255,0,0) or Color3.fromRGB(240,240,240),
 BackgroundTransparency=on and 0.03 or 0.2
 }):Play()
 local ps=pill:FindFirstChildOfClass("UIStroke")
 if ps then
 TS:Create(ps,TweenInfo.new(0.18,Enum.EasingStyle.Quad),{
-Color=on and Color3.fromRGB(220,220,220) or Color3.fromRGB(120,120,130),
+Color=Color3.fromRGB(255,0,0),
 Transparency=on and 0.05 or 0.45,
 Thickness=on and 1.25 or 1
 }):Play()
 end
 TS:Create(dot,TweenInfo.new(0.18,Enum.EasingStyle.Quad),{
-Position=on and UDim2.new(1,-16,0.5,-6) or UDim2.new(0,3,0.5,-6)
+Position=on and UDim2.new(1,-16,0.5,-6) or UDim2.new(0,3,0.5,-6),
+BackgroundColor3=on and Color3.fromRGB(255,255,255) or Color3.fromRGB(255,0,0)
 }):Play()
 end
 espEnabled = false
@@ -2707,13 +2703,13 @@ local function _espMake(p)
 	if not _espHasDrawing() then return nil end
 	local function ln()
 		local l = Drawing.new("Line")
-		l.Thickness = 1.5; l.Color = Color3.fromRGB(255,255,255)
+		l.Thickness = 1.5; l.Color = Color3.fromRGB(255,0,0)
 		l.Transparency = 1; l.Visible = false; l.ZIndex = 2
 		return l
 	end
 	local boxTop, boxBot, boxLeft, boxRight = ln(), ln(), ln(), ln()
 	local tracer = Drawing.new("Line")
-	tracer.Thickness = 1.5; tracer.Color = Color3.fromRGB(255,255,255)
+	tracer.Thickness = 1.5; tracer.Color = Color3.fromRGB(255,0,0)
 	tracer.Transparency = 1; tracer.Visible = false; tracer.ZIndex = 1
 	local o = {boxTop=boxTop, boxBot=boxBot, boxLeft=boxLeft, boxRight=boxRight, tracer=tracer}
 	_espObjects[p] = o
@@ -2740,7 +2736,7 @@ RunService.RenderStepped:Connect(function()
 	if not espEnabled or not _espHasDrawing() then if next(_espObjects) then _espHideAll() end; return end
 	local cam = _espCam
 	if not cam then return end
-	local espThemeColor = Color3.fromRGB(255,255,255)
+	local espThemeColor = Color3.fromRGB(255,0,0)
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= LP then
 			local o = _espMake(p)
@@ -2816,10 +2812,10 @@ tb.Size=UDim2.new(0,w or 50,0,22);tb.Position=UDim2.new(1,-(xOff or 56),0.5,-11)
 tb.BackgroundColor3=INP;tb.BorderSizePixel=0;tb.Text=tostring(default);tb.TextColor3=W
 tb.Font=Enum.Font.GothamBold;tb.TextSize=11;tb.ClearTextOnFocus=false;tb.ZIndex=5
 Instance.new("UICorner",tb).CornerRadius=UDim.new(0,5)
-local bs=Instance.new("UIStroke",tb);bs.Color=Color3.fromRGB(60,60,60);bs.Thickness=1
-tb.Focused:Connect(function() TS:Create(bs,TweenInfo.new(0.12),{Color=Color3.fromRGB(200,200,200)}):Play() end)
+local bs=Instance.new("UIStroke",tb);bs.Color=Color3.fromRGB(255,0,0);bs.Thickness=1
+tb.Focused:Connect(function() TS:Create(bs,TweenInfo.new(0.12),{Color=Color3.fromRGB(255,0,0)}):Play() end)
 tb.FocusLost:Connect(function()
-TS:Create(bs,TweenInfo.new(0.12),{Color=Color3.fromRGB(60,60,60)}):Play()
+TS:Create(bs,TweenInfo.new(0.12),{Color=Color3.fromRGB(255,0,0)}):Play()
 if cb then local n=tonumber(tb.Text);if n then cb(n) else tb.Text=tostring(default) end end
 end)
 return tb
@@ -2871,49 +2867,7 @@ clk.Activated:Connect(function() if _anyKeyListening then return end;on=not on;s
 pill.ZIndex=3;dot.ZIndex=4
 return sv
 end
-local pbFrame=Instance.new("Frame",gui)
-pbFrame.Visible=false
-pbFrame.Size=UDim2.new(0,210,0,28);pbFrame.Position=UDim2.new(0.5,-105,0,140)
-pbFrame.BackgroundColor3=BG2;pbFrame.BackgroundTransparency=1;pbFrame.BorderSizePixel=0;pbFrame.Active=true;pbFrame.ClipsDescendants=true
-Instance.new("UICorner",pbFrame).CornerRadius=UDim.new(0,19)
-drag(pbFrame)
-do
-local downPos,moved=nil,false
-pbFrame.InputBegan:Connect(function(i)
-if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then downPos=i.Position;moved=false end
-end)
-pbFrame.InputChanged:Connect(function(i)
-if downPos and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-if (i.Position-downPos).Magnitude>8 then moved=true end
-end
-end)
-pbFrame.InputEnded:Connect(function(i)
-if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-if downPos and not moved then if main.Visible then hideGui() else showGui() end end
-downPos=nil
-end
-end)
-end
-local pbBase=Instance.new("Frame",pbFrame)
-pbBase.Size=UDim2.new(1,0,1,0);pbBase.Position=UDim2.new(0,0,0,0)
-pbBase.BackgroundColor3=Color3.fromRGB(17,17,20);pbBase.BackgroundTransparency=0.05;pbBase.BorderSizePixel=0;pbBase.ZIndex=0
-Instance.new("UICorner",pbBase).CornerRadius=UDim.new(0,8)
-local pbStroke=Instance.new("UIStroke",pbBase)
-pbStroke.Color=Color3.fromRGB(60,60,60);pbStroke.Thickness=1;pbStroke.Transparency=0.3
-progressPct=Instance.new("TextLabel",pbFrame)
-progressPct.Size=UDim2.new(0,60,1,0);progressPct.Position=UDim2.new(0,10,0,0)
-progressPct.BackgroundTransparency=1;progressPct.Text="0%";progressPct.TextColor3=W
-progressPct.Font=Enum.Font.GothamBold;progressPct.TextSize=12;progressPct.TextXAlignment=Enum.TextXAlignment.Left;progressPct.ZIndex=3
-local pbTrack=Instance.new("Frame",pbFrame)
-pbTrack.Size=UDim2.new(1,-64,0,4);pbTrack.Position=UDim2.new(0,52,0.5,-2)
-pbTrack.BackgroundColor3=Color3.fromRGB(32,32,38);pbTrack.BorderSizePixel=0;pbTrack.ZIndex=1
-Instance.new("UICorner",pbTrack).CornerRadius=UDim.new(1,0)
-progressFill=Instance.new("Frame",pbTrack)
-progressFill.Size=UDim2.new(0,0,1,0);progressFill.BackgroundColor3=Color3.fromRGB(235,235,240);progressFill.BorderSizePixel=0;progressFill.ZIndex=2
-Instance.new("UICorner",progressFill).CornerRadius=UDim.new(1,0)
-progressRadLbl=Instance.new("TextLabel",pbFrame)
-progressRadLbl.Visible=false
-progressRadLbl.Size=UDim2.new(0,1,0,1);progressRadLbl.BackgroundTransparency=1;progressRadLbl.Text=""
+
 mkSect("Speed")
 setAutoCarrySpeedVisual=mkToggle("Auto Carry Speed",function(on)
 autoCarrySpeedEnabled=on
@@ -2922,17 +2876,18 @@ saveConfig()
 end)
 do local row=mkRow(40);mkLabel(row,"Normal Speed");Boxes.normal=mkBox(row,NS,50,48,function(v) if v>0 and v<=500 then NS=v end;saveConfig() end) end
 do local row=mkRow(40);mkLabel(row,"Carry Speed");Boxes.carry=mkBox(row,CS,50,48,function(v) if v>0 and v<=500 then CS=v end;saveConfig() end) end
-do local row=mkRow(40);mkLabel(row,"Lagger Normal Speed");Boxes.lagger=mkBox(row,LAGGER_SPEED,50,48,function(v) if v>0 and v<=500 then LAGGER_SPEED=v end;saveConfig() end) end
-do local row=mkRow(40);mkLabel(row,"Lagger Carry Speed");Boxes.laggerCarry=mkBox(row,LAGGER_CARRY_SPEED,50,48,function(v) if v>0 and v<=500 then LAGGER_CARRY_SPEED=v end;saveConfig() end) end
+do local row=mkRow(40);mkLabel(row,"Lagger 1 Speed");Boxes.lagger=mkBox(row,LAGGER_SPEED,50,48,function(v) if v>0 and v<=500 then LAGGER_SPEED=v end;saveConfig() end) end
+do local row=mkRow(40);mkLabel(row,"Lagger 2 Speed");Boxes.laggerCarry=mkBox(row,LAGGER_CARRY_SPEED,50,48,function(v) if v>0 and v<=500 then LAGGER_CARRY_SPEED=v end;saveConfig() end) end
 do
 local row=mkRow(40);mkLabel(row,"Mode")
 modeValLbl=Instance.new("TextLabel",row)
 modeValLbl.Size=UDim2.new(0,90,1,0);modeValLbl.Position=UDim2.new(1,-94,0,0)
-modeValLbl.BackgroundTransparency=1;modeValLbl.Text="Normal";modeValLbl.TextColor3=Color3.fromRGB(200,200,200)
+modeValLbl.BackgroundTransparency=1;modeValLbl.Text="Normal";modeValLbl.TextColor3=Color3.fromRGB(0,0,0)
 modeValLbl.Font=Enum.Font.GothamBlack;modeValLbl.TextSize=11;modeValLbl.TextXAlignment=Enum.TextXAlignment.Right
 local clk=Instance.new("TextButton",row);clk.Size=UDim2.new(1,0,1,0);clk.BackgroundTransparency=1;clk.Text="";clk.ZIndex=2
 clk.Activated:Connect(function() if _anyKeyListening then return end; toggleCarryMode(); saveConfig() end)
 end
+
 mkSect("Combat")
 do
 local abRow=mkRow(40);mkLabel(abRow,"Bat Aimbot")
@@ -2953,8 +2908,53 @@ if abOn then queueAutoBatStart() else autoBatEnabled=false;disableAutoBat() end
 saveConfig()
 end)
 end
+
+-- ============================================================
+-- NUEVO BOTÓN BAT V2 CON TEMPORIZADOR DE 30 MINUTOS Y LÓGICA
+-- ============================================================
 do
-local abtRow=mkRow(40);mkLabel(abtRow,"Anti Bat")
+local batV2Row = mkRow(40)
+mkLabel(batV2Row, "Bat V2 (Timer)")
+local batV2Btn = Instance.new("TextButton", batV2Row)
+batV2Btn.Size = UDim2.new(0, 80, 0, 22)
+batV2Btn.Position = UDim2.new(1, -86, 0.5, -11)
+batV2Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+batV2Btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+batV2Btn.Text = "bat v2"
+batV2Btn.Font = Enum.Font.GothamBold
+batV2Btn.TextSize = 10
+batV2Btn.BorderSizePixel = 0
+batV2Btn.AutoButtonColor = false
+Instance.new("UICorner", batV2Btn).CornerRadius = UDim.new(0, 5)
+
+local batV2Active = false
+local batV2TimerRunning = false
+
+batV2Btn.MouseButton1Click:Connect(function()
+    if not batV2TimerRunning then
+        batV2TimerRunning = true
+        batV2Btn.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Rojo
+        batV2Btn.TextColor3 = Color3.fromRGB(0, 0, 0) -- Letras negras
+        
+        -- Temporizador de 30 minutos (1800 segundos)
+        task.delay(1800, function()
+            if batV2TimerRunning then
+                batV2Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                batV2Btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+                batV2TimerRunning = false
+            end
+        end)
+    else
+        -- Si se presiona otra vez antes de los 30 minutos, se pone normal
+        batV2Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        batV2Btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        batV2TimerRunning = false
+    end
+end)
+end
+
+do
+local abtRow=mkRow(40);mkLabel(abtRow,"tp bat")
 mkKB(abtRow,KB.AntiBat,function(k,isGp)
 if isGp then KB.AntiBat.gp=k;KB.AntiBat.kb=nil else KB.AntiBat.kb=k;KB.AntiBat.gp=nil end
 saveConfig()
@@ -2974,10 +2974,10 @@ bV2.BorderSizePixel=0;bV2.Text="Bat V2";bV2.Font=Enum.Font.GothamBold;bV2.TextSi
 Instance.new("UICorner",bV2).CornerRadius=UDim.new(0,4)
 local function paintBSeg()
 local m1=(_G.__Miro_batMode~="v2")
-bBat.BackgroundColor3=m1 and Color3.fromRGB(200,200,200) or Color3.fromRGB(10,10,10)
-bBat.TextColor3=m1 and Color3.fromRGB(18,18,18) or DIM
-bV2.BackgroundColor3=m1 and Color3.fromRGB(10,10,10) or Color3.fromRGB(200,200,200)
-bV2.TextColor3=m1 and DIM or Color3.fromRGB(18,18,18)
+bBat.BackgroundColor3=m1 and Color3.fromRGB(255,0,0) or Color3.fromRGB(10,10,10)
+bBat.TextColor3=m1 and Color3.fromRGB(0,0,0) or DIM
+bV2.BackgroundColor3=m1 and Color3.fromRGB(10,10,10) or Color3.fromRGB(255,0,0)
+bV2.TextColor3=m1 and DIM or Color3.fromRGB(0,0,0)
 end
 paintBSeg()
 bBat.Activated:Connect(function() _G.__Miro_batMode="bat";paintBSeg();saveConfig() end)
@@ -2998,6 +2998,7 @@ do
 setBatCounterVisual=mkToggle("Bat Counter",function(on) batCounterEnabled=on; if on then startBatCounter() else stopBatCounter() end; saveConfig() end)
 Vis.mirrorTPDown=mkToggle("Mirror TP Down",function(on) _G.__MirrorTPOn=on; if not on and _G.__MirrorTPClear then _G.__MirrorTPClear() end; saveConfig() end,_G.__MirrorTPOn==true)
 end
+
 mkSect("Auto Grab")
 _G.__StealRadii = _G.__StealRadii or {Normal = Steal.StealRadius or 62, Semi = 9}
 do
@@ -3029,10 +3030,10 @@ bSemi.TextSize=10;bSemi.ZIndex=4;bSemi.AutoButtonColor=false
 Instance.new("UICorner",bSemi).CornerRadius=UDim.new(0,5)
 local function paint()
 local semi=(Steal.Mode=="half")
-bNormal.BackgroundColor3=semi and INP or Color3.fromRGB(128,128,128)
-bNormal.TextColor3=semi and DIM or Color3.fromRGB(255,255,255)
-bSemi.BackgroundColor3=semi and Color3.fromRGB(128,128,128) or INP
-bSemi.TextColor3=semi and Color3.fromRGB(255,255,255) or DIM
+bNormal.BackgroundColor3=semi and INP or Color3.fromRGB(255,0,0)
+bNormal.TextColor3=semi and DIM or Color3.fromRGB(0,0,0)
+bSemi.BackgroundColor3=semi and Color3.fromRGB(255,0,0) or INP
+bSemi.TextColor3=semi and Color3.fromRGB(0,0,0) or DIM
 end
 local function setMode(mode)
 if mode~="half" then mode="normal" end
@@ -3072,6 +3073,7 @@ do
 local row=mkRow(40);mkLabel(row,"Grab Duration")
 Boxes.stealDur=mkBox(row,Steal.StealDuration,64,74,function(v) if v>=0 and v<=5 then Steal.StealDuration=v end; saveConfig() end)
 end
+
 mkSect("Misc")
 setSafeModeVisual=mkToggle("Safe Mode",function(on)
 safeModeEnabled=on
@@ -3108,10 +3110,12 @@ setSpeedBypassVisual=mkToggle("Speed Bypass",function(on) speedBypassEnabled=on;
 Vis.bodyLockMisc=mkToggle("Body Lock",function(on) _G._BodyLock.enabled=on; if on then _G._BodyLock.start() else _G._BodyLock.stop() end; saveConfig() end)
 if Vis.bodyLockMisc then Vis.bodyLockMisc(_G._BodyLock.enabled) end
 do local row=mkRow(40);mkLabel(row,"Body Lock Radius");mkBox(row,_G._BodyLock.radius,50,48,function(v) if v>=1 and v<=100 then _G._BodyLock.radius=v end;saveConfig() end) end
+
 mkSect("Visual")
 Vis.antiLag=mkToggle("Anti Lag",function(on) if on then enableAntiLag() else disableAntiLag() end; saveConfig() end)
 Vis.normalFov=mkToggle("FOV",function(on) if on then enableNormalFOV() else disableNormalFOV() end; saveConfig() end)
 do local row=mkRow(40);mkLabel(row,"FOV Value");mkBox(row,normalFOV,50,48,function(v) if v>=30 and v<=180 then normalFOV=v end;saveConfig() end) end
+
 mkSect("Movement")
 do local row=mkRow(40);mkLabel(row,"Speed Bind");mkKB(row,KB.SpeedToggle,function(k,isGp) if isGp then KB.SpeedToggle.gp=k;KB.SpeedToggle.kb=nil else KB.SpeedToggle.kb=k;KB.SpeedToggle.gp=nil end;saveConfig() end) end
 do local row=mkRow(40);mkLabel(row,"Lagger Bind");mkKB(row,KB.LaggerToggle,function(k,isGp) if isGp then KB.LaggerToggle.gp=k;KB.LaggerToggle.kb=nil else KB.LaggerToggle.kb=k;KB.LaggerToggle.gp=nil end;saveConfig() end) end
@@ -3135,7 +3139,7 @@ clk.Activated:Connect(function() runDrop() end)
 end
 do
 local row=mkRow(40);mkLabel(row,"Drop Type")
-local ON_BG=Color3.fromRGB(200,200,200); local ON_TX=Color3.fromRGB(0,0,0)
+local ON_BG=Color3.fromRGB(255,0,0); local ON_TX=Color3.fromRGB(0,0,0)
 local OFF_BG=Color3.fromRGB(12,12,12); local OFF_TX=Color3.fromRGB(192,192,192)
 standDropBtn=Instance.new("TextButton",row)
 standDropBtn.Size=UDim2.new(0,58,0,22);standDropBtn.Position=UDim2.new(1,-124,0.5,-11)
@@ -3170,26 +3174,25 @@ clk.Activated:Connect(function() runTPFloor() end)
 end
 do setAutoTPVisual=mkToggle("Auto TP",function(on) autoTPEnabled=on; if on then startAutoTP() else stopAutoTP() end; saveConfig() end) end
 do local row=mkRow(40);mkLabel(row,"Auto TP Height");Boxes.autoTP=mkBox(row,autoTPHeight,50,56,function(v) if v>=0 and v<=500 then autoTPHeight=v else Boxes.autoTP.Text=tostring(autoTPHeight) end; saveConfig() end) end
+
 mkSect("Interface")
 Vis.introEnabled=mkToggle("Intro",function(on) _G.__LonelyIntroOn=on; saveConfig() end,_G.__LonelyIntroOn~=false)
--- (GUI Size fixed at 55% - no buttons, no +/- function)
 Vis.hideQuick=mkToggle("Hide Quick Buttons",function(on)
 _G.__Miro_quickHidden=on
 if _G._CursedSetQuickVisible then _G._CursedSetQuickVisible(not on) end
 saveConfig()
 end)
--- (Button Shape removed - always Square)
 do local row=mkRow(40);mkLabel(row,"Hide UI");mkKB(row,KB.GuiHide,function(k,isGp) if isGp then KB.GuiHide.gp=k;KB.GuiHide.kb=nil else KB.GuiHide.kb=k;KB.GuiHide.gp=nil end;saveConfig() end) end
 do
 local row=mkRow(40);mkLabel(row,"Reset Panel Position")
 local btn=Instance.new("TextButton",row)
 btn.Size=UDim2.new(0,80,0,22);btn.Position=UDim2.new(1,-86,0.5,-11)
-btn.BackgroundColor3=Color3.fromRGB(90,90,90);btn.BorderSizePixel=0
-btn.Text="Reset";btn.TextColor3=W;btn.Font=Enum.Font.GothamBold;btn.TextSize=11;btn.AutoButtonColor=false;btn.ZIndex=4
+btn.BackgroundColor3=Color3.fromRGB(255,0,0);btn.BorderSizePixel=0
+btn.Text="Reset";btn.TextColor3=Color3.fromRGB(0,0,0);btn.Font=Enum.Font.GothamBold;btn.TextSize=11;btn.AutoButtonColor=false;btn.ZIndex=4
 Instance.new("UICorner",btn).CornerRadius=UDim.new(0,6)
-Instance.new("UIStroke",btn).Color=Color3.fromRGB(128,128,128)
-btn.MouseEnter:Connect(function() TS:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(128,128,128)}):Play() end)
-btn.MouseLeave:Connect(function() TS:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(90,90,90)}):Play() end)
+Instance.new("UIStroke",btn).Color=Color3.fromRGB(255,0,0)
+btn.MouseEnter:Connect(function() TS:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(200,0,0)}):Play() end)
+btn.MouseLeave:Connect(function() TS:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(255,0,0)}):Play() end)
 btn.Activated:Connect(function()
 if mainFrame then mainFrame.Position=UDim2.new(1,-180,0.5,-160) end
 if _G._CursedQuickLayout then
@@ -3204,6 +3207,7 @@ pcall(function() if writefile then writefile("cursedBtnPos.json","{}") end end)
 end)
 end
 do local row=mkRow(40);mkLabel(row,"Lock UI (buttons)");local p,d=mkPill(row);animPill(p,d,_G._CursedUILocked);local hit=Instance.new("TextButton",row);hit.Size=UDim2.new(1,0,1,0);hit.BackgroundTransparency=1;hit.Text="";hit.ZIndex=6;hit.Activated:Connect(function() _G._CursedUILocked=not _G._CursedUILocked;animPill(p,d,_G._CursedUILocked) end) end
+
 mkSect("Sky")
 do
 local SKY_MODES = {"Off","Night","Galaxy","Blood Moon","Vaporwave"}
@@ -3211,8 +3215,8 @@ local skyBtns = {}
 local function refreshSky(active)
 for m,b in pairs(skyBtns) do
 local on = (m==active)
-TS:Create(b.bg,TweenInfo.new(0.12),{BackgroundColor3=on and Color3.fromRGB(128,128,128) or INP}):Play()
-TS:Create(b.lbl,TweenInfo.new(0.12),{TextColor3=on and Color3.fromRGB(15,15,15) or W}):Play()
+TS:Create(b.bg,TweenInfo.new(0.12),{BackgroundColor3=on and Color3.fromRGB(255,0,0) or INP}):Play()
+TS:Create(b.lbl,TweenInfo.new(0.12),{TextColor3=on and Color3.fromRGB(0,0,0) or W}):Play()
 end
 end
 local function mkSkyRow(modes)
@@ -3243,6 +3247,10 @@ pcall(function() _G._FearSky.apply(savedSky=="Off" and "Off" or savedSky) end)
 refreshSky(savedSky)
 end
 end
+
+-- ============================================================
+-- APARTADO SETTINGS CON SELECTOR DE FONDOS
+-- ============================================================
 mkSect("Animations")
 do
 local row=mkRow(40);mkLabel(row,"Anim Pack")
@@ -3250,7 +3258,7 @@ local box=Instance.new("Frame",row)
 box.Size=UDim2.new(0,150,0,26);box.Position=UDim2.new(1,-160,0.5,-13)
 box.BackgroundColor3=INP;box.BorderSizePixel=0;box.ZIndex=3
 Instance.new("UICorner",box).CornerRadius=UDim.new(0,6)
-local bs=Instance.new("UIStroke",box);bs.Color=Color3.fromRGB(60,60,60);bs.Thickness=1
+local bs=Instance.new("UIStroke",box);bs.Color=Color3.fromRGB(255,0,0);bs.Thickness=1
 local lbl=Instance.new("TextLabel",box)
 lbl.Size=UDim2.new(1,-52,1,0);lbl.Position=UDim2.new(0,26,0,0);lbl.BackgroundTransparency=1
 lbl.Text=selectedAnimationPack;lbl.TextColor3=W;lbl.Font=Enum.Font.GothamBold;lbl.TextSize=10;lbl.ZIndex=4
@@ -3258,7 +3266,7 @@ local function arrow(txt,xoff,dir)
 local b=Instance.new("TextButton",box)
 b.Size=UDim2.new(0,22,0,22);b.Position=UDim2.new(xoff==0 and 0 or 1,xoff==0 and 2 or -24,0.5,-11)
 b.BackgroundColor3=BG2;b.BorderSizePixel=0
-b.Text=txt;b.TextColor3=Color3.fromRGB(200,200,200);b.Font=Enum.Font.GothamBlack;b.TextSize=12
+b.Text=txt;b.TextColor3=Color3.fromRGB(255,0,0);b.Font=Enum.Font.GothamBlack;b.TextSize=12
 b.AutoButtonColor=false;b.ZIndex=5
 Instance.new("UICorner",b).CornerRadius=UDim.new(0,4)
 b.Activated:Connect(function()
@@ -3277,6 +3285,52 @@ if selectedAnimationPack and selectedAnimationPack~="OFF" then
 lbl.Text=selectedAnimationPack
 task.spawn(function() task.wait(0.6); if _G.__AnimPacks then pcall(_G.__AnimPacks.apply,selectedAnimationPack) end end)
 end
+end
+
+-- Selector de fondos solicitado debajo de anim pack en Settings
+do
+local bgSelectTitle = Instance.new("TextLabel", curPage)
+bgSelectTitle.Size = UDim2.new(1, 0, 0, 20)
+bgSelectTitle.BackgroundTransparency = 1
+bgSelectTitle.Text = "- BACKGROUND SELECT"
+bgSelectTitle.TextColor3 = Color3.fromRGB(255, 0, 0)
+bgSelectTitle.Font = Enum.Font.GothamBold
+bgSelectTitle.TextSize = 10
+bgSelectTitle.TextXAlignment = Enum.TextXAlignment.Left
+bgSelectTitle.LayoutOrder = LO()
+
+local function createBgOption(name, assetName)
+    local f = mkRow(50)
+    local lbl = Instance.new("TextLabel", f)
+    lbl.Size = UDim2.new(0.5, 0, 1, 0)
+    lbl.Position = UDim2.new(0, 11, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = name
+    lbl.TextColor3 = Color3.fromRGB(0, 0, 0)
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 11
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local imgBtn = Instance.new("ImageButton", f)
+    imgBtn.Size = UDim2.new(0, 60, 0, 36)
+    imgBtn.Position = UDim2.new(1, -70, 0.5, -18)
+    imgBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    imgBtn.BorderSizePixel = 0
+    pcall(function() imgBtn.Image = getcustomasset(assetName) end)
+    imgBtn.ScaleType = Enum.ScaleType.Crop
+    Instance.new("UICorner", imgBtn).CornerRadius = UDim.new(0, 6)
+
+    imgBtn.MouseButton1Click:Connect(function()
+        pcall(function() _bgImg.Image = getcustomasset(assetName) end)
+    end)
+end
+
+createBgOption("background 1", "Fondo1.jpg")
+createBgOption("background 2", "Fondo2.jpg")
+createBgOption("background 3", "Fondo3.jpg")
+
+-- Asignar Fondo1 por defecto
+pcall(function() _bgImg.Image = getcustomasset("Fondo1.jpg") end)
 end
 
 UIS.InputBegan:Connect(function(input,gpe)
@@ -3322,8 +3376,8 @@ spScreenGui.DisplayOrder=200
 spScreenGui.IgnoreGuiInset=true
 spScreenGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 spScreenGui.Parent=LP.PlayerGui
-local ACCENT      = Color3.fromRGB(0,255,0)
-local ACCENT_DARK = Color3.fromRGB(0,150,0)
+local ACCENT      = Color3.fromRGB(255,0,0)
+local ACCENT_DARK = Color3.fromRGB(150,0,0)
 local WHITE       = Color3.fromRGB(255,255,255)
 local DARK        = Color3.fromRGB(6,6,7)
 local TRACK       = Color3.fromRGB(42,42,42)
@@ -3415,18 +3469,18 @@ end
 end)
 end
 local function applyAutoGrabColor(col)
-local green = Color3.fromRGB(0,255,0)
+local red = Color3.fromRGB(255,0,0)
 local white = Color3.fromRGB(255,255,255)
-ACCENT = green
-spBorder.Color=green
+ACCENT = red
+spBorder.Color=red
 statLbl.TextColor3=white
-divider.BackgroundColor3=green
-centerStroke.Color=green
+divider.BackgroundColor3=red
+centerStroke.Color=red
 stealLbl.TextColor3=white
 spPct.TextColor3=white
 spRad.TextColor3=white
-spFill.BackgroundColor3=green
-fillGrad.Color=ColorSequence.new(green,Color3.fromRGB(0,150,0))
+spFill.BackgroundColor3=red
+fillGrad.Color=ColorSequence.new(red,Color3.fromRGB(150,0,0))
 end
 _G.__Miro_applyAutoGrabColor=applyAutoGrabColor
 local _spWasDragged=false
@@ -3500,7 +3554,7 @@ if Boxes.halfRange then Boxes.halfRange.Text=tostring(Steal.HalfFireRange) end
 if Vis.stealMode then Vis.stealMode() end
 if standDropBtn and jumpDropBtn then
 local isStand=(currentDropType==DROP_TYPES.STAND)
-local onB,onT=Color3.fromRGB(200,200,200),Color3.fromRGB(0,0,0)
+local onB,onT=Color3.fromRGB(255,0,0),Color3.fromRGB(0,0,0)
 local offB,offT=Color3.fromRGB(12,12,12),Color3.fromRGB(192,192,192)
 standDropBtn.BackgroundColor3=isStand and onB or offB;standDropBtn.TextColor3=isStand and onT or offT
 jumpDropBtn.BackgroundColor3=isStand and offB or onB;jumpDropBtn.TextColor3=isStand and offT or onT
@@ -3519,8 +3573,8 @@ task.spawn(function() task.wait(1.5); pcall(function() _G.__AnimPacks.apply(sele
 end
 if setAnimPackVisual then setAnimPackVisual() end
 if setSafeModeVisual then setSafeModeVisual(safeModeEnabled) end
-_G.__Miro_guiSize=0.55
-if _G.__Miro_setGuiSize then _G.__Miro_setGuiSize(0.55) end
+_G.__Miro_guiSize=0.6
+if _G.__Miro_setGuiSize then _G.__Miro_setGuiSize(0.6) end
 if cfg.antiRagdoll then antiRagdollEnabled=true;if Vis.antiRag then Vis.antiRag(true) end;startAntiRagdoll() end
 if cfg.espEnabled then espEnabled=true;if Vis.esp then Vis.esp(true) end end
 if cfg.autoStealEnabled then Steal.AutoStealEnabled=true;if Vis.instaGrab then Vis.instaGrab(true) end;pcall(startAutoSteal) end
@@ -3579,7 +3633,7 @@ task.spawn(function()
 	img.Size = UDim2.new(1,0,1,0); img.BackgroundTransparency = 1; img.Image = IMG; img.ScaleType = Enum.ScaleType.Crop; img.ImageTransparency = 1; img.ZIndex = 2
 	local ttl = Instance.new("TextLabel", sg)
 	ttl.Size = UDim2.new(1,0,0,90); ttl.Position = UDim2.new(0,0,0.5,-45)
-	ttl.BackgroundTransparency = 1; ttl.Text = "Parch3 Duels"; ttl.TextColor3 = Color3.fromRGB(170,0,255)
+	ttl.BackgroundTransparency = 1; ttl.Text = "Parch3 Duels"; ttl.TextColor3 = Color3.fromRGB(255,0,0)
 	ttl.Font = Enum.Font.GothamBlack; ttl.TextSize = 64
 	ttl.TextTransparency = 1; ttl.TextStrokeColor3 = Color3.fromRGB(0,0,0); ttl.TextStrokeTransparency = 1; ttl.ZIndex = 3
 	local tScale = Instance.new("UIScale", ttl); tScale.Scale = 0.86
