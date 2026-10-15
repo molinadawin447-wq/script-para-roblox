@@ -2029,18 +2029,26 @@ end
 local function createButton(text, isToggle, callback, initialActive)
 local container = Instance.new("Frame")
 container.Size = UDim2.new(0, 58, 0, 58)
-container.BackgroundColor3 = Color3.fromRGB(255,255,255) -- Fondo blanco para botones desactivados / panel GUI
-container.BorderSizePixel = 0
+container.BackgroundColor3 = Color3.fromRGB(255,255,255) -- Fondo blanco solicitado para los botones de la derecha
+container.BackgroundTransparency = 0
+container.BorderSizePixel = 0 -- Eliminación de bordes
 container.Active = true
 local _btnCorner=Instance.new("UICorner", container)
 _btnCorner.CornerRadius = UDim.new(0,12)
 
--- Sin bordes solicitados
+-- Sombra / Degradado de arriba hacia abajo para los botones de la derecha
+local btnGradient = Instance.new("UIGradient", container)
+btnGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(150, 150, 150))
+}
+btnGradient.Rotation = 90
+
 local btn = Instance.new("TextButton")
 btn.Size = UDim2.new(1,0,1,0)
 btn.BackgroundTransparency = 1
 btn.Text = text
-btn.TextColor3 = Color3.fromRGB(0,0,0) -- Letras negras por defecto (desactivado)
+btn.TextColor3 = Color3.fromRGB(0,0,0) -- Letras negras por defecto cuando están desactivados
 btn.Font = Enum.Font.GothamBold
 btn.TextSize = 12
 btn.TextWrapped = true
@@ -2052,9 +2060,21 @@ local active = initialActive or false
 local function setActive(state)
 active = state
 if isToggle then
-local col = Color3.fromRGB(255,0,0) -- Rojo cuando activo
-container.BackgroundColor3 = active and col or Color3.fromRGB(255,255,255) -- Blanco cuando desactivado
-btn.TextColor3 = active and Color3.fromRGB(0,0,0) or Color3.fromRGB(0,0,0) -- Letras negras cuando desactivado
+    if active then
+        container.BackgroundColor3 = Color3.fromRGB(255,0,0)
+        btnGradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 0, 0)),
+            ColorSequenceKeypoint.new(1.0, Color3.fromRGB(150, 0, 0))
+        }
+        btn.TextColor3 = Color3.fromRGB(0,0,0)
+    else
+        container.BackgroundColor3 = Color3.fromRGB(255,255,255) -- Blanco cuando están desactivados
+        btnGradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(1.0, Color3.fromRGB(150, 150, 150))
+        }
+        btn.TextColor3 = Color3.fromRGB(0,0,0) -- Letras negras cuando están desactivados
+    end
 end
 end
 
@@ -2065,12 +2085,19 @@ setActive(active)
 
 btn.MouseButton1Down:Connect(function()
 if not isToggle then
-local col = Color3.fromRGB(255,0,0)
-container.BackgroundColor3 = col
+container.BackgroundColor3 = Color3.fromRGB(255,0,0)
+btnGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 0, 0)),
+    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(150, 0, 0))
+}
 btn.TextColor3 = Color3.fromRGB(0,0,0)
 task.delay(0.15, function()
 if container and container.Parent then
 container.BackgroundColor3 = Color3.fromRGB(255,255,255)
+btnGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(150, 150, 150))
+}
 btn.TextColor3 = Color3.fromRGB(0,0,0)
 end
 end)
@@ -2505,7 +2532,7 @@ end
 closeBtn.MouseButton1Click:Connect(hideGui)
 miniBtn.MouseButton1Click:Connect(showGui)
 
--- Botón de la izquierda: "parch3 duels" en letras negras con fondo blanco
+-- ===== MENU button on the LEFT side (Actualizado a fondo blanco y letras negras) =====
 local menuBtn=Instance.new("TextButton",gui)
 menuBtn.Name="MenuBtn"
 menuBtn.Size=UDim2.new(0,100,0,34)
@@ -2513,7 +2540,7 @@ menuBtn.Position=UDim2.new(0,12,0.5,-17)
 menuBtn.BackgroundColor3=Color3.fromRGB(255,255,255) -- Fondo blanco
 menuBtn.BorderSizePixel=0
 menuBtn.Text="parch3 duels"
-menuBtn.TextColor3=Color3.fromRGB(0,0,0) -- Letras negras solicitado
+menuBtn.TextColor3=Color3.fromRGB(0,0,0) -- Letras negras
 menuBtn.Font=Enum.Font.GothamBold
 menuBtn.TextSize=13
 menuBtn.ZIndex=50
@@ -2605,56 +2632,60 @@ l.BackgroundTransparency=1;l.Text=txt:upper();l.TextColor3=Color3.fromRGB(255,10
 l.Font=Enum.Font.GothamBold;l.TextSize=10;l.TextXAlignment=Enum.TextXAlignment.Left
 end
 
--- Botones de la derecha y filas ajustados: Fondo blanco al estar desactivados, letras negras, sin bordes
-local function applyRightButtonTheme(f)
-    f.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    f.BackgroundTransparency = 0
-    local stroke = f:FindFirstChildOfClass("UIStroke")
-    if stroke then stroke:Destroy() end
-    
-    for _, child in ipairs(f:GetDescendants()) do
-        if child:IsA("TextLabel") or child:IsA("TextButton") then
-            child.TextColor3 = Color3.fromRGB(0, 0, 0)
-        end
-    end
-end
-
 local function mkRow(h)
 local f=Instance.new("Frame",curPage);f.Size=UDim2.new(1,-2,0,h or 40)
-f.BackgroundColor3=Color3.fromRGB(255,255,255)
-f.BackgroundTransparency=0
+f.BackgroundColor3=Color3.fromRGB(255,255,255);f.BackgroundTransparency=0 -- Cuadros transparentes de las funciones puestos en blanco sólido
 f.BorderSizePixel=0;f.LayoutOrder=LO()
 f.ZIndex=6
 Instance.new("UICorner",f).CornerRadius=UDim.new(0,10)
-applyRightButtonTheme(f)
+local rs=f:FindFirstChildOfClass("UIStroke")
+if rs then rs:Destroy() end
+
+local fGradient = Instance.new("UIGradient", f)
+fGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(150, 150, 150))
+}
+fGradient.Rotation = 90
+
+f.MouseEnter:Connect(function() TS:Create(f,TweenInfo.new(0.08),{BackgroundColor3=Color3.fromRGB(230,230,230)}):Play() end)
+f.MouseLeave:Connect(function() TS:Create(f,TweenInfo.new(0.08),{BackgroundColor3=Color3.fromRGB(255,255,255)}):Play() end)
 return f
 end
 local function mkLabel(row,txt)
 local l=Instance.new("TextLabel",row);l.Size=UDim2.new(0.58,0,1,0);l.Position=UDim2.new(0,11,0,0)
-l.BackgroundTransparency=1;l.Text=txt;l.TextColor3=Color3.fromRGB(0,0,0)
+l.BackgroundTransparency=1;l.Text=txt;l.TextColor3=Color3.fromRGB(0,0,0) -- Letras negras en los cuadros de funciones
 l.Font=Enum.Font.GothamBold;l.TextSize=11;l.TextXAlignment=Enum.TextXAlignment.Left
 l.ZIndex=8
 end
 local function mkPill(row,offset)
 local pill=Instance.new("Frame",row);pill.Size=UDim2.new(0,34,0,18)
 pill.Position=UDim2.new(1,-(offset or 56),0.5,-9)
-pill.BackgroundColor3=Color3.fromRGB(255,255,255);pill.BackgroundTransparency=0 -- Cuadros transparentes puestos de color blanco
+pill.BackgroundColor3=Color3.fromRGB(240,240,240);pill.BackgroundTransparency=0.2
 pill.BorderSizePixel=0;pill.ZIndex=3
 Instance.new("UICorner",pill).CornerRadius=UDim.new(0,9)
+local ps=pill:FindFirstChildOfClass("UIStroke")
+if ps then ps:Destroy() end
 local dot=Instance.new("Frame",pill);dot.Size=UDim2.new(0,13,0,13);dot.Position=UDim2.new(0,3,0.5,-6)
-dot.BackgroundColor3=Color3.fromRGB(0,0,0);dot.BackgroundTransparency=0
+dot.BackgroundColor3=Color3.fromRGB(255,0,0);dot.BackgroundTransparency=0
 dot.BorderSizePixel=0;dot.ZIndex=4
 Instance.new("UICorner",dot).CornerRadius=UDim.new(1,0)
+local shine=Instance.new("Frame",dot);shine.Size=UDim2.new(1,-4,0,4);shine.Position=UDim2.new(0,2,0,2)
+shine.BackgroundColor3=Color3.fromRGB(255,255,255);shine.BackgroundTransparency=0.72
+shine.BorderSizePixel=0;shine.ZIndex=5
+Instance.new("UICorner",shine).CornerRadius=UDim.new(0,4)
 return pill,dot
 end
 local function animPill(pill,dot,on)
 TS:Create(pill,TweenInfo.new(0.18,Enum.EasingStyle.Quad),{
-BackgroundColor3=on and Color3.fromRGB(255,0,0) or Color3.fromRGB(255,255,255),
-BackgroundTransparency=0
+BackgroundColor3=on and Color3.fromRGB(255,0,0) or Color3.fromRGB(240,240,240),
+BackgroundTransparency=on and 0.03 or 0.2
 }):Play()
+local ps=pill:FindFirstChildOfClass("UIStroke")
+if ps then ps:Destroy() end
 TS:Create(dot,TweenInfo.new(0.18,Enum.EasingStyle.Quad),{
 Position=on and UDim2.new(1,-16,0.5,-6) or UDim2.new(0,3,0.5,-6),
-BackgroundColor3=on and Color3.fromRGB(255,255,255) or Color3.fromRGB(0,0,0)
+BackgroundColor3=on and Color3.fromRGB(255,255,255) or Color3.fromRGB(255,0,0)
 }):Play()
 end
 espEnabled = false
@@ -2774,9 +2805,15 @@ end
 local function mkBox(parent,default,w,xOff,cb)
 local tb=Instance.new("TextBox",parent)
 tb.Size=UDim2.new(0,w or 50,0,22);tb.Position=UDim2.new(1,-(xOff or 56),0.5,-11)
-tb.BackgroundColor3=Color3.fromRGB(255,255,255);tb.BorderSizePixel=0;tb.Text=tostring(default);tb.TextColor3=Color3.fromRGB(0,0,0)
+tb.BackgroundColor3=INP;tb.BorderSizePixel=0;tb.Text=tostring(default);tb.TextColor3=W
 tb.Font=Enum.Font.GothamBold;tb.TextSize=11;tb.ClearTextOnFocus=false;tb.ZIndex=5
 Instance.new("UICorner",tb).CornerRadius=UDim.new(0,5)
+local bs=tb:FindFirstChildOfClass("UIStroke")
+if bs then bs:Destroy() end
+tb.Focused:Connect(function() end)
+tb.FocusLost:Connect(function()
+if cb then local n=tonumber(tb.Text);if n then cb(n) else tb.Text=tostring(default) end end
+end)
 return tb
 end
 local GAMEPAD_KEYS={[Enum.KeyCode.ButtonA]=true,[Enum.KeyCode.ButtonB]=true,[Enum.KeyCode.ButtonX]=true,[Enum.KeyCode.ButtonY]=true,[Enum.KeyCode.ButtonL1]=true,[Enum.KeyCode.ButtonR1]=true,[Enum.KeyCode.ButtonL2]=true,[Enum.KeyCode.ButtonR2]=true,[Enum.KeyCode.ButtonL3]=true,[Enum.KeyCode.ButtonR3]=true,[Enum.KeyCode.ButtonStart]=true,[Enum.KeyCode.ButtonSelect]=true,[Enum.KeyCode.DPadUp]=true,[Enum.KeyCode.DPadDown]=true,[Enum.KeyCode.DPadLeft]=true,[Enum.KeyCode.DPadRight]=true}
@@ -2790,22 +2827,22 @@ local function kbMatch(entry,kc) return kc and (kc==entry.kb or (entry.gp and kc
 local function mkKB(parent,kbEntry,cb)
 local btn=Instance.new("TextButton",parent)
 btn.Size=UDim2.new(0,46,0,22);btn.Position=UDim2.new(1,-50,0.5,-11)
-btn.BackgroundColor3=Color3.fromRGB(255,255,255);btn.BorderSizePixel=0
+btn.BackgroundColor3=INP;btn.BorderSizePixel=0
 local function getLabel() return (kbEntry.gp and kbEntry.gp.Name) or (kbEntry.kb and kbEntry.kb.Name) or "None" end
-btn.Text=getLabel();btn.TextColor3=Color3.fromRGB(0,0,0)
+btn.Text=getLabel();btn.TextColor3=W
 btn.Font=Enum.Font.GothamBold;btn.TextSize=9;btn.ZIndex=5
 Instance.new("UICorner",btn).CornerRadius=UDim.new(0,5)
 local li=false;local lc;local pv=btn.Text;local listenStart=0
 btn.Activated:Connect(function()
-if li then li=false;_anyKeyListening=false;if lc then lc:Disconnect();lc=nil end;btn.Text=pv;btn.TextColor3=Color3.fromRGB(0,0,0);return end
-pv=btn.Text;li=true;_anyKeyListening=true;listenStart=tick();btn.Text="...";btn.TextColor3=Color3.fromRGB(0,0,0)
+if li then li=false;_anyKeyListening=false;if lc then lc:Disconnect();lc=nil end;btn.Text=pv;btn.TextColor3=W;return end
+pv=btn.Text;li=true;_anyKeyListening=true;listenStart=tick();btn.Text="...";btn.TextColor3=W
 lc=UIS.InputBegan:Connect(function(inp)
 if not li then return end
-if inp.KeyCode==Enum.KeyCode.Escape then li=false;_anyKeyListening=false;if lc then lc:Disconnect();lc=nil end;btn.Text=pv;btn.TextColor3=Color3.fromRGB(0,0,0);return end
+if inp.KeyCode==Enum.KeyCode.Escape then li=false;_anyKeyListening=false;if lc then lc:Disconnect();lc=nil end;btn.Text=pv;btn.TextColor3=W;return end
 local isGp=isGamepadInput(inp)
 if isGp and tick()-listenStart<0.15 then return end
 if not isBindableInput(inp) then return end
-btn.Text=inp.KeyCode.Name;pv=inp.KeyCode.Name;btn.TextColor3=Color3.fromRGB(0,0,0)
+btn.Text=inp.KeyCode.Name;pv=inp.KeyCode.Name;btn.TextColor3=W
 li=false;_anyKeyListening=false;if lc then lc:Disconnect();lc=nil end
 if cb then cb(inp.KeyCode,isGp) end
 end)
@@ -2914,7 +2951,7 @@ saveConfig()
 end)
 local bseg=Instance.new("Frame",abtRow)
 bseg.Size=UDim2.new(0,92,0,18);bseg.Position=UDim2.new(1,-150,0.5,-9)
-bseg.BackgroundColor3=Color3.fromRGB(255,255,255);bseg.BorderSizePixel=0;bseg.ZIndex=3
+bseg.BackgroundColor3=Color3.fromRGB(10,10,10);bseg.BorderSizePixel=0;bseg.ZIndex=3
 Instance.new("UICorner",bseg).CornerRadius=UDim.new(0,5)
 local bBat=Instance.new("TextButton",bseg)
 bBat.Size=UDim2.new(0.5,-2,1,-4);bBat.Position=UDim2.new(0,2,0,2)
@@ -2926,10 +2963,10 @@ bV2.BorderSizePixel=0;bV2.Text="Bat V2";bV2.Font=Enum.Font.GothamBold;bV2.TextSi
 Instance.new("UICorner",bV2).CornerRadius=UDim.new(0,4)
 local function paintBSeg()
 local m1=(_G.__Miro_batMode~="v2")
-bBat.BackgroundColor3=m1 and Color3.fromRGB(255,0,0) or Color3.fromRGB(255,255,255)
-bBat.TextColor3=Color3.fromRGB(0,0,0)
-bV2.BackgroundColor3=m1 and Color3.fromRGB(255,255,255) or Color3.fromRGB(255,0,0)
-bV2.TextColor3=Color3.fromRGB(0,0,0)
+bBat.BackgroundColor3=m1 and Color3.fromRGB(255,0,0) or Color3.fromRGB(10,10,10)
+bBat.TextColor3=m1 and Color3.fromRGB(0,0,0) or DIM
+bV2.BackgroundColor3=m1 and Color3.fromRGB(10,10,10) or Color3.fromRGB(255,0,0)
+bV2.TextColor3=m1 and DIM or Color3.fromRGB(0,0,0)
 end
 paintBSeg()
 bBat.Activated:Connect(function() _G.__Miro_batMode="bat";paintBSeg();saveConfig() end)
@@ -2968,7 +3005,7 @@ do
 local row=mkRow(40);mkLabel(row,"Grab Mode")
 local seg=Instance.new("Frame",row)
 seg.Size=UDim2.new(0,128,0,26);seg.Position=UDim2.new(1,-138,0.5,-13)
-seg.BackgroundColor3=Color3.fromRGB(255,255,255);seg.BorderSizePixel=0;seg.ZIndex=3
+seg.BackgroundColor3=INP;seg.BorderSizePixel=0;seg.ZIndex=3
 Instance.new("UICorner",seg).CornerRadius=UDim.new(0,6)
 local bNormal=Instance.new("TextButton",seg)
 bNormal.Size=UDim2.new(0.5,-2,1,-4);bNormal.Position=UDim2.new(0,2,0,2)
@@ -2982,10 +3019,22 @@ bSemi.TextSize=10;bSemi.ZIndex=4;bSemi.AutoButtonColor=false
 Instance.new("UICorner",bSemi).CornerRadius=UDim.new(0,5)
 local function paint()
 local semi=(Steal.Mode=="half")
-bNormal.BackgroundColor3=semi and Color3.fromRGB(255,255,255) or Color3.fromRGB(255,0,0)
-bNormal.TextColor3=Color3.fromRGB(0,0,0)
-bSemi.BackgroundColor3=semi and Color3.fromRGB(255,0,0) or Color3.fromRGB(255,255,255)
-bSemi.TextColor3=Color3.fromRGB(0,0,0)
+bNormal.BackgroundColor3=semi and INP or Color3.fromRGB(255,0,0)
+bNormal.TextColor3=semi and DIM or Color3.fromRGB(0,0,0)
+bSemi.BackgroundColor3=semi and Color3.fromRGB(255,0,0) or INP
+bSemi.TextColor3=semi and Color3.fromRGB(0,0,0) or DIM
+end
+local function setMode(mode)
+if mode~="half" then mode="normal" end
+_G.__StealRadii[(Steal.Mode=="half") and "Semi" or "Normal"]=Steal.StealRadius
+Steal.Mode=mode
+local key=(mode=="half") and "Semi" or "Normal"
+local r=_G.__StealRadii[key] or ((mode=="half") and 9 or 62)
+Steal.StealRadius=r
+if Boxes.rad then Boxes.rad.Text=tostring(r) end
+if progressRadLbl then progressRadLbl.Text=string.format("Radius: %.2g",r) end
+paint()
+saveConfig()
 end
 paint()
 Vis.stealMode=paint
@@ -3080,29 +3129,29 @@ end
 do
 local row=mkRow(40);mkLabel(row,"Drop Type")
 local ON_BG=Color3.fromRGB(255,0,0); local ON_TX=Color3.fromRGB(0,0,0)
-local OFF_BG=Color3.fromRGB(255,255,255); local OFF_TX=Color3.fromRGB(0,0,0)
+local OFF_BG=Color3.fromRGB(12,12,12); local OFF_TX=Color3.fromRGB(192,192,192)
 standDropBtn=Instance.new("TextButton",row)
 standDropBtn.Size=UDim2.new(0,58,0,22);standDropBtn.Position=UDim2.new(1,-124,0.5,-11)
 standDropBtn.BackgroundColor3=(currentDropType==DROP_TYPES.STAND) and ON_BG or OFF_BG;standDropBtn.BorderSizePixel=0
-standDropBtn.Text="Stand";standDropBtn.TextColor3=OFF_TX
+standDropBtn.Text="Stand";standDropBtn.TextColor3=(currentDropType==DROP_TYPES.STAND) and ON_TX or OFF_TX
 standDropBtn.Font=Enum.Font.GothamBold;standDropBtn.TextSize=10;standDropBtn.ZIndex=3
 Instance.new("UICorner",standDropBtn).CornerRadius=UDim.new(0,6)
 jumpDropBtn=Instance.new("TextButton",row)
 jumpDropBtn.Size=UDim2.new(0,58,0,22);jumpDropBtn.Position=UDim2.new(1,-62,0.5,-11)
 jumpDropBtn.BackgroundColor3=(currentDropType==DROP_TYPES.JUMP) and ON_BG or OFF_BG;jumpDropBtn.BorderSizePixel=0
-jumpDropBtn.Text="Jump";jumpDropBtn.TextColor3=OFF_TX
+jumpDropBtn.Text="Jump";jumpDropBtn.TextColor3=(currentDropType==DROP_TYPES.JUMP) and ON_TX or OFF_TX
 jumpDropBtn.Font=Enum.Font.GothamBold;jumpDropBtn.TextSize=10;jumpDropBtn.ZIndex=3
 Instance.new("UICorner",jumpDropBtn).CornerRadius=UDim.new(0,6)
 standDropBtn.Activated:Connect(function()
 currentDropType=DROP_TYPES.STAND
-standDropBtn.BackgroundColor3=ON_BG
-jumpDropBtn.BackgroundColor3=OFF_BG
+standDropBtn.BackgroundColor3=ON_BG;standDropBtn.TextColor3=ON_TX
+jumpDropBtn.BackgroundColor3=OFF_BG;jumpDropBtn.TextColor3=OFF_TX
 pcall(saveConfig)
 end)
 jumpDropBtn.Activated:Connect(function()
 currentDropType=DROP_TYPES.JUMP
-jumpDropBtn.BackgroundColor3=ON_BG
-standDropBtn.BackgroundColor3=OFF_BG
+jumpDropBtn.BackgroundColor3=ON_BG;jumpDropBtn.TextColor3=ON_TX
+standDropBtn.BackgroundColor3=OFF_BG;standDropBtn.TextColor3=OFF_TX
 pcall(saveConfig)
 end)
 end
@@ -3127,9 +3176,11 @@ do
 local row=mkRow(40);mkLabel(row,"Reset Panel Position")
 local btn=Instance.new("TextButton",row)
 btn.Size=UDim2.new(0,80,0,22);btn.Position=UDim2.new(1,-86,0.5,-11)
-btn.BackgroundColor3=Color3.fromRGB(255,255,255);btn.BorderSizePixel=0
+btn.BackgroundColor3=Color3.fromRGB(255,0,0);btn.BorderSizePixel=0
 btn.Text="Reset";btn.TextColor3=Color3.fromRGB(0,0,0);btn.Font=Enum.Font.GothamBold;btn.TextSize=11;btn.AutoButtonColor=false;btn.ZIndex=4
 Instance.new("UICorner",btn).CornerRadius=UDim.new(0,6)
+btn.MouseEnter:Connect(function() TS:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(200,0,0)}):Play() end)
+btn.MouseLeave:Connect(function() TS:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(255,0,0)}):Play() end)
 btn.Activated:Connect(function()
 if mainFrame then mainFrame.Position=UDim2.new(1,-180,0.5,-160) end
 if _G._CursedQuickLayout then
@@ -3152,8 +3203,8 @@ local skyBtns = {}
 local function refreshSky(active)
 for m,b in pairs(skyBtns) do
 local on = (m==active)
-TS:Create(b.bg,TweenInfo.new(0.12),{BackgroundColor3=on and Color3.fromRGB(255,0,0) or Color3.fromRGB(255,255,255)}):Play()
-TS:Create(b.lbl,TweenInfo.new(0.12),{TextColor3=Color3.fromRGB(0,0,0)}):Play()
+TS:Create(b.bg,TweenInfo.new(0.12),{BackgroundColor3=on and Color3.fromRGB(255,0,0) or INP}):Play()
+TS:Create(b.lbl,TweenInfo.new(0.12),{TextColor3=on and Color3.fromRGB(0,0,0) or W}):Play()
 end
 end
 local function mkSkyRow(modes)
@@ -3164,10 +3215,10 @@ local hl=Instance.new("UIListLayout",holder);hl.FillDirection=Enum.FillDirection
 hl.Padding=UDim.new(0,4);hl.HorizontalAlignment=Enum.HorizontalAlignment.Center;hl.VerticalAlignment=Enum.VerticalAlignment.Center
 for i,m in ipairs(modes) do
 local bg=Instance.new("Frame",holder);bg.Size=UDim2.new(0,(#modes==3 and 84 or 130),1,0)
-bg.BackgroundColor3=Color3.fromRGB(255,255,255);bg.BorderSizePixel=0;bg.LayoutOrder=i;bg.ZIndex=3
+bg.BackgroundColor3=INP;bg.BorderSizePixel=0;bg.LayoutOrder=i;bg.ZIndex=3
 Instance.new("UICorner",bg).CornerRadius=UDim.new(0,6)
 local lbl=Instance.new("TextLabel",bg);lbl.Size=UDim2.new(1,0,1,0);lbl.BackgroundTransparency=1
-lbl.Text=m;lbl.TextColor3=Color3.fromRGB(0,0,0);lbl.Font=Enum.Font.GothamBold;lbl.TextSize=10;lbl.ZIndex=4
+lbl.Text=m;lbl.TextColor3=W;lbl.Font=Enum.Font.GothamBold;lbl.TextSize=10;lbl.ZIndex=4
 local b=Instance.new("TextButton",bg);b.Size=UDim2.new(1,0,1,0);b.BackgroundTransparency=1;b.Text="";b.ZIndex=5
 b.Activated:Connect(function()
 pcall(function() _G._FearSky.apply(m=="Off" and "Off" or m) end)
@@ -3190,15 +3241,15 @@ do
 local row=mkRow(40);mkLabel(row,"Anim Pack")
 local box=Instance.new("Frame",row)
 box.Size=UDim2.new(0,150,0,26);box.Position=UDim2.new(1,-160,0.5,-13)
-box.BackgroundColor3=Color3.fromRGB(255,255,255);box.BorderSizePixel=0;box.ZIndex=3
+box.BackgroundColor3=INP;box.BorderSizePixel=0;box.ZIndex=3
 Instance.new("UICorner",box).CornerRadius=UDim.new(0,6)
 local lbl=Instance.new("TextLabel",box)
 lbl.Size=UDim2.new(1,-52,1,0);lbl.Position=UDim2.new(0,26,0,0);lbl.BackgroundTransparency=1
-lbl.Text=selectedAnimationPack;lbl.TextColor3=Color3.fromRGB(0,0,0);lbl.Font=Enum.Font.GothamBold;lbl.TextSize=10;lbl.ZIndex=4
+lbl.Text=selectedAnimationPack;lbl.TextColor3=W;lbl.Font=Enum.Font.GothamBold;lbl.TextSize=10;lbl.ZIndex=4
 local function arrow(txt,xoff,dir)
 local b=Instance.new("TextButton",box)
 b.Size=UDim2.new(0,22,0,22);b.Position=UDim2.new(xoff==0 and 0 or 1,xoff==0 and 2 or -24,0.5,-11)
-b.BackgroundColor3=Color3.fromRGB(255,255,255);b.BorderSizePixel=0
+b.BackgroundColor3=BG2;b.BorderSizePixel=0
 b.Text=txt;b.TextColor3=Color3.fromRGB(255,0,0);b.Font=Enum.Font.GothamBlack;b.TextSize=12
 b.AutoButtonColor=false;b.ZIndex=5
 Instance.new("UICorner",b).CornerRadius=UDim.new(0,4)
@@ -3250,7 +3301,7 @@ local function createBgOption(name, assetName)
     imgBtn.BorderSizePixel = 0
     pcall(function() imgBtn.Image = getcustomasset(assetName) end)
     imgBtn.ScaleType = Enum.ScaleType.Crop
-    Instance.new("UICorner", imgBtn).CornerRadius = UDIm.new(0, 6)
+    Instance.new("UICorner", imgBtn).CornerRadius = UDim.new(0, 6)
 
     imgBtn.MouseButton1Click:Connect(function()
         pcall(function() _bgImg.Image = getcustomasset(assetName) end)
@@ -3486,9 +3537,9 @@ if Vis.stealMode then Vis.stealMode() end
 if standDropBtn and jumpDropBtn then
 local isStand=(currentDropType==DROP_TYPES.STAND)
 local onB,onT=Color3.fromRGB(255,0,0),Color3.fromRGB(0,0,0)
-local offB,offT=Color3.fromRGB(255,255,255),Color3.fromRGB(0,0,0)
-standDropBtn.BackgroundColor3=isStand and onB or offB;standDropBtn.TextColor3=offT
-jumpDropBtn.BackgroundColor3=isStand and offB or onB;jumpDropBtn.TextColor3=offT
+local offB,offT=Color3.fromRGB(12,12,12),Color3.fromRGB(192,192,192)
+standDropBtn.BackgroundColor3=isStand and onB or offB;standDropBtn.TextColor3=isStand and onT or offT
+jumpDropBtn.BackgroundColor3=isStand and offB or onB;jumpDropBtn.TextColor3=isStand and offT or onT
 end
 if progressRadLbl then progressRadLbl.Text=string.format("Radius: %.2g",Steal.StealRadius) end
 if Boxes.lagger then Boxes.lagger.Text=tostring(LAGGER_SPEED) end
