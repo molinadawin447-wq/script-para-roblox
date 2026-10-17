@@ -1,26 +1,21 @@
 --[[
-    PARCH3 DUELS - Script v9.1.3
+    PARCH3 DUELS - Script v9.1.4
+    CAMBIOS v9.1.4:
+    - ✅ Amine.jpg → Cartas.jpg en selector de fondos
+    - ✅ Parch3.jpg → Parchered.jpg en título y miniBtn
+    - ✅ Fondo Steal.jpg en la barra de Auto Steal
+    - ✅ Barra de progreso de Auto Steal cambiada de ROJO a AZUL
     CAMBIOS v9.1.3:
-    - ✅ Cielos.jpg, Halloween2.jpg, Limosna.jpg, Nube.jpg, Amine.jpg en selector (ya estaba)
     - ✅ Pestañas movidas de la IZQUIERDA (vertical) a ABAJO (horizontal)
     - ✅ Sombra oscura de arriba hacia abajo en todos los botones derechos
     CAMBIOS v9.1.2:
-    - ✅ Nuevas imágenes de fondo: Cielos.jpg, Halloween2.jpg, Limosna.jpg, Nube.jpg, Amine.jpg
+    - ✅ Nuevas imágenes de fondo: Cielos.jpg, Halloween2.jpg, Limosna.jpg, Nube.jpg
     CAMBIOS v9.1.1:
-    - ✅ Imagen "Parch3.jpg" en el botón de la izquierda (miniBtn)
-    - ✅ Imagen "Parch3.jpg" en la parte superior del panel GUI (título)
+    - ✅ Imagen "Parchered.jpg" en el botón de la izquierda (miniBtn)
+    - ✅ Imagen "Parchered.jpg" en la parte superior del panel GUI (título)
     - ✅ Texto "Selec" en color ROJO en Background Image
     - ✅ Velocidad de enemigos en color ROJO
     - ✅ Texto "OPEN" en color ROJO en Bat Skin
-    CAMBIOS v9.1.0:
-    - ✅ Botones activos derechos: ROJO
-    - ✅ Funciones del panel: AZUL
-    - ✅ Bolitas de toggles activas: AZUL
-    - ✅ Óvalo de pestaña activa: ROJO
-    - ✅ Fondo de Auto Steal: ROJO
-    - ✅ Lock activo: Bloquea botones derechos, PERO Auto Steal sí se mueve
-    - ✅ Velocidad del jugador: BLANCO
-    - ✅ Nombres de ESP (jugadores): BLANCO
 ]]
 
 skipIntroEnabled = true
@@ -130,7 +125,7 @@ backgroundIndex = 1
 backgroundImages = {
     "Halloween.jpg", "Naru.jpg", "Luna.jpg", "Itac.jpg",
     "Chino.jpg", "Chino2.jpg", "Cereso.jpg",
-    "Cielos.jpg", "Halloween2.jpg", "Limosna.jpg", "Nube.jpg", "Amine.jpg"
+    "Cielos.jpg", "Halloween2.jpg", "Limosna.jpg", "Nube.jpg", "Cartas.jpg"
 }
 
 backgroundImageTransparency = 0
@@ -1760,7 +1755,7 @@ end
 function disableStretch() stretchEnabled = false; if stretchConn then stretchConn:Disconnect(); stretchConn = nil end; local cam = workspace.CurrentCamera; if cam then pcall(function() cam.FieldOfView = origFOV or 70 end) end end
 
 -- ============================================================
--- ✅ CAMBIO 3: SOMBRA OSCURA DE ARRIBA HACIA ABAJO
+-- SOMBRA OSCURA DE ARRIBA HACIA ABAJO
 -- ============================================================
 function paintFloatingBtn(btnFrame, active)
     if not btnFrame then return end
@@ -2079,9 +2074,10 @@ function buildGui()
 
     mainUIScale = Instance.new("UIScale", main); mainUIScale.Scale = uiScaleValue / 100
 
+    -- ✅ Título con Parchered.jpg
     local titleFrame = Instance.new("Frame", main); titleFrame.Size = UDim2.new(1, -140, 0, 40); titleFrame.Position = UDim2.new(0, 30, 0, 15); titleFrame.BackgroundTransparency = 1; titleFrame.ZIndex = 20
     titleLbl = Instance.new("ImageLabel", titleFrame); titleLbl.Size = UDim2.new(0, 180, 0, 40); titleLbl.Position = UDim2.new(0, 0, 0, 0); titleLbl.BackgroundTransparency = 1
-    titleLbl.Image = getcustomasset("Parch3.jpg"); titleLbl.ScaleType = Enum.ScaleType.Fit
+    titleLbl.Image = getcustomasset("Parchered.jpg"); titleLbl.ScaleType = Enum.ScaleType.Fit
     titleLbl.ZIndex = 21
 
     local lockBtnFrame = Instance.new("TextButton", main); lockBtnFrame.Size = UDim2.new(0, 32, 0, 32); lockBtnFrame.Position = UDim2.new(1, -80, 0, 20); lockBtnFrame.BackgroundColor3 = Color3.fromRGB(30,30,35); lockBtnFrame.BackgroundTransparency = 0.6; lockBtnFrame.BorderSizePixel = 0
@@ -2092,20 +2088,19 @@ function buildGui()
     closeBtn.Text = "−"; closeBtn.TextColor3 = WHITE; closeBtn.Font = Enum.Font.GothamBold; closeBtn.TextSize = 26; closeBtn.AutoButtonColor = false; closeBtn.ZIndex = 200
     Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8); closeBtn.MouseButton1Click:Connect(function() hideGui() end)
 
+    -- ✅ miniBtn con Parchered.jpg
     miniBtn = Instance.new("TextButton", gui); miniBtn.Size = UDim2.new(0, 170, 0, 52); miniBtn.Position = UDim2.new(0, 16, 0, 58); miniBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0); miniBtn.BackgroundTransparency = 0; miniBtn.BorderSizePixel = 0; miniBtn.Text = ""; miniBtn.TextColor3 = PASTEL_PINK
     miniBtn.Font = Enum.Font.GothamBlack; miniBtn.TextSize = 16; miniBtn.ZIndex = 20; miniBtn.Visible = false; miniBtn.AutoButtonColor = false
     Instance.new("UICorner", miniBtn).CornerRadius = UDim.new(1, 0)
     local miniStroke = Instance.new("UIStroke", miniBtn); miniStroke.Color = PASTEL_PINK; miniStroke.Thickness = BTN_STROKE_THICKNESS; miniStroke.Transparency = BTN_STROKE_TRANSPARENCY
-    local miniImg = Instance.new("ImageLabel", miniBtn); miniImg.Name = "MiniImage"; miniImg.AnchorPoint = Vector2.new(0.5, 0.5); miniImg.Size = UDim2.new(0, 120, 0, 120); miniImg.Position = UDim2.new(0.5, 0, 0.5, 0); miniImg.BackgroundTransparency = 1; miniImg.Image = getcustomasset("Parch3.jpg"); miniImg.ScaleType = Enum.ScaleType.Fit; miniImg.ZIndex = 21; miniImg.Parent = miniBtn
+    local miniImg = Instance.new("ImageLabel", miniBtn); miniImg.Name = "MiniImage"; miniImg.AnchorPoint = Vector2.new(0.5, 0.5); miniImg.Size = UDim2.new(0, 120, 0, 120); miniImg.Position = UDim2.new(0.5, 0, 0.5, 0); miniImg.BackgroundTransparency = 1; miniImg.Image = getcustomasset("Parchered.jpg"); miniImg.ScaleType = Enum.ScaleType.Fit; miniImg.ZIndex = 21; miniImg.Parent = miniBtn
     miniBtn.MouseButton1Click:Connect(function() showGui() end)
 
     local slideTween = nil; local mainOriginalPos = main.Position
     showGui = function() if slideTween then slideTween:Cancel() end; if not main then return end; main.Visible = true; miniBtn.Visible = false; main.Position = UDim2.new(0, -GUI_W - 20, 0, 2); slideTween = TS:Create(main, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = mainOriginalPos}); slideTween:Play() end
     hideGui = function() if slideTween then slideTween:Cancel() end; if not main or not main.Visible then return end; local targetPos = UDim2.new(0, -GUI_W - 20, 0, 2); slideTween = TS:Create(main, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPos}); slideTween:Play(); slideTween.Completed:Connect(function() main.Visible = false; miniBtn.Visible = true; slideTween = nil end) end
 
-    -- ============================================================
-    -- ✅ CAMBIO 2: PESTAÑAS HORIZONTALES EN LA PARTE INFERIOR
-    -- ============================================================
+    -- PESTAÑAS HORIZONTALES EN LA PARTE INFERIOR
     local tabBar = Instance.new("Frame", main); tabBar.Name = "BottomTabBar"; tabBar.Size = UDim2.new(1, -20, 0, 40); tabBar.Position = UDim2.new(0, 10, 1, -50); tabBar.BackgroundTransparency = 1; tabBar.BorderSizePixel = 0; tabBar.ZIndex = 10
     local tabLayout = Instance.new("UIListLayout", tabBar); tabLayout.FillDirection = Enum.FillDirection.Horizontal; tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center; tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center; tabLayout.Padding = UDim.new(0, 4); tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     local tabContent = Instance.new("Frame", main); tabContent.Name = "TabContent"; tabContent.Size = UDim2.new(1, -20, 1, -120); tabContent.Position = UDim2.new(0, 10, 0, 60); tabContent.BackgroundTransparency = 1; tabContent.ClipsDescendants = true; tabContent.ZIndex = 5
@@ -2335,10 +2330,21 @@ function buildGui()
     addKeybindRow(keyPage, "TP Down", KB.TPFloor); addKeybindRow(keyPage, "Drop Brainrot", KB.DropBrainrot)
     addKeybindRow(keyPage, "Hide GUI", KB.GuiHide)
 
+    -- ============================================================
+    -- BARRA AUTO STEAL CON FONDO Steal.jpg + PROGRESO AZUL
+    -- ============================================================
     pbFrame = Instance.new("Frame", gui); pbFrame.Size = UDim2.new(0, 480, 0, 76); pbFrame.Position = UDim2.new(0.5, -240, 1, -90); pbFrame.BackgroundTransparency = 1; pbFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0); pbFrame.BorderSizePixel = 0; pbFrame.Active = true; pbFrame.ClipsDescendants = true; pbFrame.Visible = true; pbFrame.ZIndex = 10
     pbScale = Instance.new("UIScale", pbFrame); pbScale.Scale = progressBarScaleValue / 100
     if savedProgressBarPos then pbFrame.Position = UDim2.new(savedProgressBarPos.XScale or 0.5, savedProgressBarPos.XOffset or -240, savedProgressBarPos.YScale or 1, savedProgressBarPos.YOffset or -90) end
     Instance.new("UICorner", pbFrame).CornerRadius = UDim.new(0, 16)
+
+    -- 🖼️ Fondo Steal.jpg en la barra de Auto Steal
+    local pbBg = Instance.new("ImageLabel", pbFrame); pbBg.Name = "StealBackground"
+    pbBg.Size = UDim2.new(1, 0, 1, 0); pbBg.Position = UDim2.new(0, 0, 0, 0); pbBg.BackgroundTransparency = 1
+    local _sOk, _sAsset = pcall(function() return getcustomasset("Steal.jpg") end)
+    pbBg.Image = _sOk and _sAsset or ""
+    pbBg.ScaleType = Enum.ScaleType.Crop; pbBg.ZIndex = 11
+    Instance.new("UICorner", pbBg).CornerRadius = UDim.new(0, 16)
     
     local border = Instance.new("UIStroke", pbFrame); border.Color = BLACK_STROKE; border.Thickness = BTN_STROKE_THICKNESS; border.Transparency = 0.3
     local pctRow = Instance.new("Frame", pbFrame); pctRow.Size = UDim2.new(1, 0, 0, 26); pctRow.Position = UDim2.new(0, 0, 0, 4); pctRow.BackgroundTransparency = 1; pctRow.ZIndex = 12
@@ -2347,9 +2353,11 @@ function buildGui()
     fpsLabel = Instance.new("TextLabel", infoRow); fpsLabel.Size = UDim2.new(0, 130, 1, 0); fpsLabel.Position = UDim2.new(0, 14, 0, 0); fpsLabel.BackgroundTransparency = 1; fpsLabel.Text = "FPS: --"; fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255); fpsLabel.Font = Enum.Font.GothamBlack; fpsLabel.TextSize = 22; fpsLabel.TextXAlignment = Enum.TextXAlignment.Left; fpsLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0); fpsLabel.TextStrokeTransparency = 0.2; fpsLabel.ZIndex = 13
     msLabel = Instance.new("TextLabel", infoRow); msLabel.Size = UDim2.new(0, 130, 1, 0); msLabel.Position = UDim2.new(0, 14 + 130 + 12, 0, 0); msLabel.BackgroundTransparency = 1; msLabel.Text = "MS: --"; msLabel.TextColor3 = Color3.fromRGB(255, 255, 255); msLabel.Font = Enum.Font.GothamBlack; msLabel.TextSize = 22; msLabel.TextXAlignment = Enum.TextXAlignment.Left; msLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0); msLabel.TextStrokeTransparency = 0.2; msLabel.ZIndex = 13
     local progressRow = Instance.new("Frame", pbFrame); progressRow.Size = UDim2.new(1, -20, 0, 14); progressRow.Position = UDim2.new(0, 10, 0, 56); progressRow.BackgroundTransparency = 1; progressRow.ZIndex = 11
-    local fillRegion = Instance.new("Frame", progressRow); fillRegion.Size = UDim2.new(1, 0, 1, 0); fillRegion.BackgroundColor3 = Color3.fromRGB(255, 0, 0); fillRegion.BackgroundTransparency = 0; fillRegion.BorderSizePixel = 0; fillRegion.ClipsDescendants = true; fillRegion.ZIndex = 12
+    -- ✅ AZUL en vez de rojo
+    local fillRegion = Instance.new("Frame", progressRow); fillRegion.Size = UDim2.new(1, 0, 1, 0); fillRegion.BackgroundColor3 = Color3.fromRGB(0, 100, 255); fillRegion.BackgroundTransparency = 0; fillRegion.BorderSizePixel = 0; fillRegion.ClipsDescendants = true; fillRegion.ZIndex = 12
     Instance.new("UICorner", fillRegion).CornerRadius = UDim.new(0, 10); local frStroke = Instance.new("UIStroke", fillRegion); frStroke.Color = Color3.fromRGB(0, 0, 0); frStroke.Thickness = BTN_STROKE_THICKNESS; frStroke.Transparency = 0; frStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    progressFill = Instance.new("Frame", fillRegion); progressFill.Size = UDim2.new(0, 0, 1, 0); progressFill.Position = UDim2.new(0, 0, 0, 0); progressFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0); progressFill.BorderSizePixel = 0; progressFill.ZIndex = 13
+    -- ✅ AZUL en vez de rojo
+    progressFill = Instance.new("Frame", fillRegion); progressFill.Size = UDim2.new(0, 0, 1, 0); progressFill.Position = UDim2.new(0, 0, 0, 0); progressFill.BackgroundColor3 = Color3.fromRGB(0, 100, 255); progressFill.BorderSizePixel = 0; progressFill.ZIndex = 13
     Instance.new("UICorner", progressFill).CornerRadius = UDim.new(0, 10)
 
     drag(pbFrame, true)
@@ -2590,8 +2598,9 @@ end)
 task.defer(function() task.wait(0.1); _RaptureApplyThemeToSliders() end)
 
 print("===========================================")
-print("  PARCH3 DUELS CARGADO v9.1.3")
-print("  ✅ Pestañas movidas a la parte inferior (horizontal)")
-print("  ✅ Sombra oscura arriba→abajo en botones derechos")
-print("  ✅ 5 imágenes nuevas (Cielos, Halloween2, Limosna, Nube, Amine)")
+print("  PARCH3 DUELS CARGADO v9.1.4")
+print("  ✅ Cartas.jpg reemplaza Amine.jpg")
+print("  ✅ Parchered.jpg en título y miniBtn")
+print("  ✅ Fondo Steal.jpg en barra Auto Steal")
+print("  ✅ Barra Auto Steal AZUL")
 print("===========================================")
