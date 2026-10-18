@@ -1,9 +1,7 @@
 --[[
-    PARCH3 DUELS - Script v9.2.1
-    CAMBIOS v9.2.1:
-    - ✅ Anti Bat: Gira más lento y visible, incluso quieto (AutoRotate desactivado)
-    - ✅ Auto TP Down: Altura cambiada a 3.5 personajes (~18 studs)
-    - ✅ Todos los toggles nuevos se guardan y cargan automáticamente
+    PARCH3 DUELS - Script v9.2.2
+    CAMBIOS v9.2.2:
+    - ✅ Anti Bat: Velocidad de giro aumentada a 65 (gira más rápido pero se logra ver)
 ]]
 
 skipIntroEnabled = true
@@ -989,9 +987,9 @@ local function doTpDown()
     end)
 end
 
--- ✅ NUEVO ANTI BAT (Gira constantemente incluso quieto, AutoRotate desactivado para no ser golpeado)
+-- ✅ ANTI BAT (Gira super rápido, pero se logra ver)
 local antiBatConn = nil
-local ANTI_BAT_SPIN_SPEED = 35 -- Velocidad reducida para que sea visible pero rápida
+local ANTI_BAT_SPIN_SPEED = 65 -- Aumentado a 65 para girar más rápido pero visible
 
 function startAntiBat()
     if antiBatConn then return end
@@ -2753,8 +2751,6 @@ end)
 task.defer(function() task.wait(0.1); _RaptureApplyThemeToSliders() end)
 
 print("===========================================")
-print("  PARCH3 DUELS CARGADO v9.2.1")
-print("  ✅ Anti Bat ajustado (Gira visiblemente)")
-print("  ✅ Auto TP Down altura: 3.5 personajes")
-print("  ✅ Todo se guarda y carga automáticamente")
+print("  PARCH3 DUELS CARGADO v9.2.2")
+print("  ✅ Anti Bat gira más rápido (65)")
 print("===========================================")
