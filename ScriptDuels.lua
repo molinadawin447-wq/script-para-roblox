@@ -1,7 +1,9 @@
 --[[
-    PARCH3 DUELS - Script v9.2.0
-    CAMBIOS v9.2.0:
-    - ✅ NUEVA FUNCIÓN: "Anti Bat" en Combat (Gira super rápido en el mismo lugar)
+    PARCH3 DUELS - Script v9.2.1
+    CAMBIOS v9.2.1:
+    - ✅ Anti Bat: Gira más lento y visible, incluso quieto (AutoRotate desactivado)
+    - ✅ Auto TP Down: Altura cambiada a 3.5 personajes (~18 studs)
+    - ✅ Todos los toggles nuevos se guardan y cargan automáticamente
 ]]
 
 skipIntroEnabled = true
@@ -106,11 +108,11 @@ _G.RaptureToolAssets = {}
 hideEnemySpeedEnabled = false
 hideMobileButtonsEnabled = false
 autoTpDownEnabled = false
-antiBatEnabled = false -- ✅ NUEVO
+antiBatEnabled = false 
 setSpeedPlayerVisual = nil
 setMobileButtonVisual = nil
 setAutoTpDownVisual = nil
-setAntiBatVisual = nil -- ✅ NUEVO
+setAntiBatVisual = nil 
 
 stealMode = "V2"
 local STEAL_MODE_LOCKED = "V2"
@@ -420,7 +422,7 @@ local function _afHubSpeedLive()
     return (os.clock() - stamp) <= _ANTI_FLING_DRIVE_GRACE
 end
 local function _afOwnMoverActive()
-    if autoBatEnabled or autoLeftEnabled or autoRightEnabled or batDesyncTpEnabled then return true end
+    if autoBatEnabled or autoLeftEnabled or autoRightEnabled or batDesyncTpEnabled or antiBatEnabled then return true end
     if _G._RaptureBatBypass and _G._RaptureBatBypass.enabled then return true end
     return false
 end
@@ -987,20 +989,25 @@ local function doTpDown()
     end)
 end
 
--- ✅ NUEVO ANTI BAT (GIRA SUPER RÁPIDO EN EL MISMO LUGAR)
+-- ✅ NUEVO ANTI BAT (Gira constantemente incluso quieto, AutoRotate desactivado para no ser golpeado)
 local antiBatConn = nil
-local ANTI_BAT_SPIN_SPEED = 100 -- Valor alto para girar super rápido
+local ANTI_BAT_SPIN_SPEED = 35 -- Velocidad reducida para que sea visible pero rápida
 
 function startAntiBat()
     if antiBatConn then return end
     antiBatEnabled = true
+    local char = LP.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.AutoRotate = false end
+    end
     antiBatConn = RunService.Heartbeat:Connect(function()
         if not antiBatEnabled then return end
         local char = LP.Character; if not char then return end
         local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
         local hum = char:FindFirstChildOfClass("Humanoid"); if not hum or hum.Health <= 0 then return end
         
-        -- Aplica una velocidad angular altísima en el eje Y (hace girar al personaje)
+        if hum.AutoRotate then hum.AutoRotate = false end
         root.AssemblyAngularVelocity = Vector3.new(0, ANTI_BAT_SPIN_SPEED, 0)
     end)
 end
@@ -1012,6 +1019,8 @@ function stopAntiBat()
     if char then
         local root = char:FindFirstChild("HumanoidRootPart")
         if root then root.AssemblyAngularVelocity = Vector3.zero end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.AutoRotate = true end
     end
 end
 
@@ -1851,7 +1860,7 @@ function setupMovementAndIndicators(char)
         local hum = char2:FindFirstChildOfClass("Humanoid"); local hrp = char2:FindFirstChild("HumanoidRootPart")
         if not hum or not hrp then return end
 
-        -- AUTO TP DOWN (Altura de 2 personajes / approx 12 studs del suelo)
+        -- AUTO TP DOWN (Altura de 3.5 personajes ~ 18 studs del suelo)
         if autoTpDownEnabled then
             local rp = RaycastParams.new()
             rp.FilterDescendantsInstances = {char2}
@@ -1861,7 +1870,7 @@ function setupMovementAndIndicators(char)
             local floorY = rr and rr.Position.Y or 0
             local heightFromFloor = hrp.Position.Y - floorY
             
-            if heightFromFloor > 12 then
+            if heightFromFloor > 18 then
                 doTpDown()
             end
         end
@@ -1899,7 +1908,7 @@ function stopAllBackgroundTasks()
     if _G._RaptureBatBypass and _G._RaptureBatBypass.enabled then _G.RaptureStopBatBypass() end
     stopAutoLeft(); stopAutoRight(); if unwalkEnabled and not _tpBatUnwalkForced then stopUnwalk() end
     if antiLagEnabled then disableAntiLag() end; if dropActive then stopDropBrainrot() end; if espEnabled then stopESP() end
-    if antiBatEnabled then stopAntiBat() end -- ✅ DETENER ANTI BAT
+    if antiBatEnabled then stopAntiBat() end 
     dropActive = false; alPhase = 1; arPhase = 1; lastDropTime = 0; medusaDebounce = false; medusaLastUsed = 0
 end
 
@@ -1912,7 +1921,7 @@ function buildConfigTable()
         dropMode = 2, stretchEnabled = stretchEnabled, stretchFOV = stretchFOV, stretchValue = stretchValue, fovEnabled = fovEnabled, fovValue = fovValue,
         uiScale = uiScaleValue, progressBarScale = progressBarScaleValue, tpBatEnabled = batDesyncTpEnabled, batBypassEnabled = batBypassEnabled,
         espEnabled = espEnabled, antiLag = antiLagEnabled, customSounds = customSoundsEnabled, minecraftBatSkinEnabled = minecraftBatSkinEnabled, minecraftBatSkinColorMode = minecraftBatSkinColorMode,
-        hideEnemySpeed = hideEnemySpeedEnabled, hideMobileButtons = hideMobileButtonsEnabled, autoTpDown = autoTpDownEnabled, antiBat = antiBatEnabled, -- ✅ NUEVO
+        hideEnemySpeed = hideEnemySpeedEnabled, hideMobileButtons = hideMobileButtonsEnabled, autoTpDown = autoTpDownEnabled, antiBat = antiBatEnabled, 
         mobileButtonPositions = savedButtonPositions, tpBatFloatingPos = tpBatFloatingPos, batBypassFloatingPos = batBypassFloatingPos, instaResetFloatingPos = instaResetFloatingPos,
         progressBarPos = savedProgressBarPos, lockUI = uiLocked, backgroundIndex = backgroundIndex, backgroundImageTransparency = backgroundImageTransparency, floatingButtonScale = floatingButtonScale, skipIntro = true,
     }
@@ -1949,7 +1958,7 @@ function loadAllSettings()
     hideEnemySpeedEnabled = data.hideEnemySpeed or false
     hideMobileButtonsEnabled = data.hideMobileButtons or false
     autoTpDownEnabled = data.autoTpDown or false
-    antiBatEnabled = data.antiBat or false -- ✅ CARGAR ANTI BAT
+    antiBatEnabled = data.antiBat or false 
     
     if MobilePanel then
         MobilePanel.Enabled = not hideMobileButtonsEnabled
@@ -1984,7 +1993,7 @@ function resetToFactoryDefaults()
         antiFlingEnabled = false; antiDieEnabled = false; medusaCounterEnabled = false; batCounterEnabled = false; ragdollCountdownEnabled = false
         autoBatEnabled = false; autoLeftEnabled = false; autoRightEnabled = false; unwalkEnabled = false; uiLocked = true; CONFIG.AUTO_STEAL_ENABLED = false; BAT_AIMBOT_SPEED = 58; aimbotMode = "V1"
         customSoundsEnabled = false; batBypassEnabled = false; minecraftBatSkinEnabled = false; minecraftBatSkinColorMode = "Default"
-        hideEnemySpeedEnabled = false; hideMobileButtonsEnabled = false; autoTpDownEnabled = false; antiBatEnabled = false -- ✅ RESET ANTI BAT
+        hideEnemySpeedEnabled = false; hideMobileButtonsEnabled = false; autoTpDownEnabled = false; antiBatEnabled = false 
         
         if MobilePanel then
             MobilePanel.Enabled = true
@@ -2013,7 +2022,7 @@ function resetToFactoryDefaults()
             if setSpeedPlayerVisual then setSpeedPlayerVisual(false) end
             if setMobileButtonVisual then setMobileButtonVisual(false) end
             if setAutoTpDownVisual then setAutoTpDownVisual(false) end
-            if setAntiBatVisual then setAntiBatVisual(false) end -- ✅ RESET VISUAL ANTI BAT
+            if setAntiBatVisual then setAntiBatVisual(false) end
             if _G.stretchToggleSetter then _G.stretchToggleSetter(false) end; if aimbotModeSetVisual then aimbotModeSetVisual("V1") end; if antiRagSetVisual then antiRagSetVisual("V1") end
             if _G.RaptureCustomSounds then _G.RaptureCustomSounds.setEnabled(false) end; refreshSpeedModeLabel()
         end)
@@ -2357,7 +2366,7 @@ function buildGui()
         task.defer(saveAllSettings)
     end)
 
-    -- ✅ NUEVO ANTI BAT
+    -- NUEVO ANTI BAT
     setAntiBatVisual = mkToggle(combatPage, "Anti Bat", function(on)
         if on then startAntiBat() else stopAntiBat() end
         task.defer(saveAllSettings)
@@ -2682,7 +2691,10 @@ function updateUIFromLoaded()
     if setSpeedPlayerVisual then setSpeedPlayerVisual(not hideEnemySpeedEnabled) end
     if setMobileButtonVisual then setMobileButtonVisual(hideMobileButtonsEnabled) end
     if setAutoTpDownVisual then setAutoTpDownVisual(autoTpDownEnabled) end
-    if setAntiBatVisual then setAntiBatVisual(antiBatEnabled) end -- ✅ CARGAR VISUAL ANTI BAT
+    
+    -- ✅ Cargar e iniciar Anti Bat si estaba activado
+    if setAntiBatVisual then setAntiBatVisual(antiBatEnabled) end
+    if antiBatEnabled then startAntiBat() end
     
     startEnemySpeed(); toggleLockUI(uiLocked)
 end
@@ -2741,6 +2753,8 @@ end)
 task.defer(function() task.wait(0.1); _RaptureApplyThemeToSliders() end)
 
 print("===========================================")
-print("  PARCH3 DUELS CARGADO v9.2.0")
-print("  ✅ Anti Bat agregado (Gira en el mismo lugar)")
+print("  PARCH3 DUELS CARGADO v9.2.1")
+print("  ✅ Anti Bat ajustado (Gira visiblemente)")
+print("  ✅ Auto TP Down altura: 3.5 personajes")
+print("  ✅ Todo se guarda y carga automáticamente")
 print("===========================================")
