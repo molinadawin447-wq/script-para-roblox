@@ -1,9 +1,7 @@
 --[[
-    PARCH3 DUELS - Script v9.1.5
-    CAMBIOS v9.1.5:
-    - ✅ Nuevo Toggle "Speed Player" en Visual
-    - ✅ Nuevo Toggle "Mobile Button" en Config
-    - ✅ Nuevo Toggle "Auto TP Down" en Combat
+    PARCH3 DUELS - Script v9.1.7
+    CAMBIOS v9.1.7:
+    - ✅ Mobile Button ahora oculta TODOS los botones de la derecha (Panel, TP BAT, BYPASS, RESET)
 ]]
 
 skipIntroEnabled = true
@@ -957,14 +955,17 @@ function isBindableInput(inp)
 end
 function kbMatch(entry, kc) return kc and (entry.kb == kc or (entry.gp and kc == entry.gp)) end
 function resetProgressBar() if progressPct then progressPct.Text = "0%" end; if progressFill then progressFill.Size = UDim2.new(0, 0, 1, 0) end end
+
+-- ✅ ALTURA DEL TP DOWN CAMBIADA A -4
 local function doTpDown()
     pcall(function()
         local char = LP.Character; if not char then return end
         local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
-        root.CFrame = _CFnew(root.Position.X, -7, root.Position.Z) * CFrame.Angles(0, select(2, root.CFrame:ToEulerAnglesYXZ()), 0)
+        root.CFrame = _CFnew(root.Position.X, -4, root.Position.Z) * CFrame.Angles(0, select(2, root.CFrame:ToEulerAnglesYXZ()), 0)
         root.Velocity = _V3zero
     end)
 end
+
 function saveSkipIntroSetting() end
 function setSkipIntro(enabled) skipIntroEnabled = true; saveAllSettings() end
 
@@ -1890,9 +1891,14 @@ function loadAllSettings()
     hideEnemySpeedEnabled = data.hideEnemySpeed or false
     hideMobileButtonsEnabled = data.hideMobileButtons or false
     autoTpDownEnabled = data.autoTpDown or false
-    if MobilePanel and MobilePanel:FindFirstChild("FloatingPanel") then
-        MobilePanel.FloatingPanel.Visible = not hideMobileButtonsEnabled
+    
+    if MobilePanel then
+        MobilePanel.Enabled = not hideMobileButtonsEnabled
+        if MobilePanel:FindFirstChild("FloatingPanel") then MobilePanel.FloatingPanel.Visible = not hideMobileButtonsEnabled end
     end
+    if tpBatFloatingButton then tpBatFloatingButton.Enabled = not hideMobileButtonsEnabled end
+    if batBypassFloatingButton then batBypassFloatingButton.Enabled = not hideMobileButtonsEnabled end
+    if instaResetFloatingButton then instaResetFloatingButton.Enabled = not hideMobileButtonsEnabled end
     
     uiScaleValue = data.uiScale or uiScaleValue; progressBarScaleValue = data.progressBarScale or progressBarScaleValue
     if mainUIScale then mainUIScale.Scale = uiScaleValue / 100 end; if pbScale then pbScale.Scale = progressBarScaleValue / 100 end
@@ -1920,7 +1926,15 @@ function resetToFactoryDefaults()
         autoBatEnabled = false; autoLeftEnabled = false; autoRightEnabled = false; unwalkEnabled = false; uiLocked = true; CONFIG.AUTO_STEAL_ENABLED = false; BAT_AIMBOT_SPEED = 58; aimbotMode = "V1"
         customSoundsEnabled = false; batBypassEnabled = false; minecraftBatSkinEnabled = false; minecraftBatSkinColorMode = "Default"
         hideEnemySpeedEnabled = false; hideMobileButtonsEnabled = false; autoTpDownEnabled = false
-        if MobilePanel and MobilePanel:FindFirstChild("FloatingPanel") then MobilePanel.FloatingPanel.Visible = true end
+        
+        if MobilePanel then
+            MobilePanel.Enabled = true
+            if MobilePanel:FindFirstChild("FloatingPanel") then MobilePanel.FloatingPanel.Visible = true end
+        end
+        if tpBatFloatingButton then tpBatFloatingButton.Enabled = true end
+        if batBypassFloatingButton then batBypassFloatingButton.Enabled = true end
+        if instaResetFloatingButton then instaResetFloatingButton.Enabled = true end
+        
         if _G._RaptureBatBypass and _G._RaptureBatBypass.enabled then _G.RaptureStopBatBypass() end; if deactivateAllBatSkins then pcall(deactivateAllBatSkins) end
         stretchEnabled = false; stretchValue = 0.7; fovValue = 70; uiScaleValue = 66; progressBarScaleValue = 55; backgroundIndex = 1; floatingButtonScale = 1; espEnabled = false; antiLagEnabled = false
         for key, val in pairs(DEFAULT_KB) do if KB[key] then KB[key].kb = val.kb; KB[key].gp = val.gp end end
@@ -2302,9 +2316,9 @@ function buildGui()
     local visualPage = contentPages["Visual"]
     setESPVisual = mkToggle(visualPage, "ESP Players", function(on) if on then startESP() else stopESP() end; task.defer(saveAllSettings) end)
     
-    -- NUEVO SPEED PLAYER
+    -- NUEVO SPEED PLAYER (Lógica invertida: Izquierda = Oculto, Derecha = Visible)
     setSpeedPlayerVisual = mkToggle(visualPage, "Speed Player", function(on) 
-        hideEnemySpeedEnabled = on
+        hideEnemySpeedEnabled = not on
         task.defer(saveAllSettings)
     end)
     
@@ -2332,12 +2346,18 @@ function buildGui()
     progressBarScaleBox = mkStepRow(configPage, "Progress Bar Scale", function() return progressBarScaleValue end, function(v) progressBarScaleValue = v; if pbScale then pbScale.Scale = v / 100 end end, 30, 150, 1)
     mkStepRow(configPage, "Button Scale", function() return _floor(floatingButtonScale * 100) end, function(v) floatingButtonScale = v / 100; applyFloatingButtonScale() end, 50, 200, 1)
     
-    -- NUEVO MOBILE BUTTON
+    -- NUEVO MOBILE BUTTON (Oculta TODOS los botones flotantes de la derecha)
     setMobileButtonVisual = mkToggle(configPage, "Mobile Button", function(on)
         hideMobileButtonsEnabled = on
-        if MobilePanel and MobilePanel:FindFirstChild("FloatingPanel") then
-            MobilePanel.FloatingPanel.Visible = not on
+        
+        if MobilePanel then
+            MobilePanel.Enabled = not on
+            if MobilePanel:FindFirstChild("FloatingPanel") then MobilePanel.FloatingPanel.Visible = not on end
         end
+        if tpBatFloatingButton then tpBatFloatingButton.Enabled = not on end
+        if batBypassFloatingButton then batBypassFloatingButton.Enabled = not on end
+        if instaResetFloatingButton then instaResetFloatingButton.Enabled = not on end
+        
         task.defer(saveAllSettings)
     end)
     
@@ -2592,7 +2612,7 @@ function updateUIFromLoaded()
     if customSoundsEnabled and _G.RaptureCustomSounds then _G.RaptureCustomSounds.setEnabled(true) end
     if minecraftBatSkinEnabled then MinecraftBatSkin.State.enabled = true; MinecraftBatSkin.SetColorMode(minecraftBatSkinColorMode); task.defer(function() pcall(MinecraftBatSkin.Apply) end) else MinecraftBatSkin.State.enabled = false; task.defer(function() pcall(MinecraftBatSkin.Remove) end) end
     
-    if setSpeedPlayerVisual then setSpeedPlayerVisual(hideEnemySpeedEnabled) end
+    if setSpeedPlayerVisual then setSpeedPlayerVisual(not hideEnemySpeedEnabled) end
     if setMobileButtonVisual then setMobileButtonVisual(hideMobileButtonsEnabled) end
     if setAutoTpDownVisual then setAutoTpDownVisual(autoTpDownEnabled) end
     
@@ -2652,8 +2672,6 @@ end)
 task.defer(function() task.wait(0.1); _RaptureApplyThemeToSliders() end)
 
 print("===========================================")
-print("  PARCH3 DUELS CARGADO v9.1.5")
-print("  ✅ Speed Player Toggle")
-print("  ✅ Mobile Button Toggle")
-print("  ✅ Auto TP Down Toggle")
+print("  PARCH3 DUELS CARGADO v9.1.7")
+print("  ✅ Mobile Button oculta todos los botones flotantes")
 print("===========================================")
