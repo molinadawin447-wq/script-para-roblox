@@ -1,7 +1,7 @@
 --[[
-    PARCH3 DUELS - Script v9.1.7
-    CAMBIOS v9.1.7:
-    - ✅ Mobile Button ahora oculta TODOS los botones de la derecha (Panel, TP BAT, BYPASS, RESET)
+    PARCH3 DUELS - Script v9.1.8
+    CAMBIOS v9.1.8:
+    - ✅ Auto TP Down ahora se activa a una altura de 2 studs
 ]]
 
 skipIntroEnabled = true
@@ -1802,9 +1802,9 @@ function setupMovementAndIndicators(char)
         local hum = char2:FindFirstChildOfClass("Humanoid"); local hrp = char2:FindFirstChild("HumanoidRootPart")
         if not hum or not hrp then return end
 
-        -- AUTO TP DOWN
+        -- AUTO TP DOWN (Altura cambiada a 2)
         if autoTpDownEnabled then
-            if hrp.Position.Y > 40 then
+            if hrp.Position.Y > 2 then
                 doTpDown()
             end
         end
@@ -2672,6 +2672,6 @@ end)
 task.defer(function() task.wait(0.1); _RaptureApplyThemeToSliders() end)
 
 print("===========================================")
-print("  PARCH3 DUELS CARGADO v9.1.7")
-print("  ✅ Mobile Button oculta todos los botones flotantes")
+print("  PARCH3 DUELS CARGADO v9.1.8")
+print("  ✅ Auto TP Down altura de activación: 2")
 print("===========================================")
