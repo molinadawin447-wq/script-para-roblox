@@ -1,21 +1,9 @@
 --[[
-    PARCH3 DUELS - Script v9.1.4
-    CAMBIOS v9.1.4:
-    - ✅ Amine.jpg → Cartas.jpg en selector de fondos
-    - ✅ Parch3.jpg → Parchered.jpg en título y miniBtn
-    - ✅ Fondo Steal.jpg en la barra de Auto Steal
-    - ✅ Barra de progreso de Auto Steal cambiada de ROJO a AZUL
-    CAMBIOS v9.1.3:
-    - ✅ Pestañas movidas de la IZQUIERDA (vertical) a ABAJO (horizontal)
-    - ✅ Sombra oscura de arriba hacia abajo en todos los botones derechos
-    CAMBIOS v9.1.2:
-    - ✅ Nuevas imágenes de fondo: Cielos.jpg, Halloween2.jpg, Limosna.jpg, Nube.jpg
-    CAMBIOS v9.1.1:
-    - ✅ Imagen "Parchered.jpg" en el botón de la izquierda (miniBtn)
-    - ✅ Imagen "Parchered.jpg" en la parte superior del panel GUI (título)
-    - ✅ Texto "Selec" en color ROJO en Background Image
-    - ✅ Velocidad de enemigos en color ROJO
-    - ✅ Texto "OPEN" en color ROJO en Bat Skin
+    PARCH3 DUELS - Script v9.1.5
+    CAMBIOS v9.1.5:
+    - ✅ Nuevo Toggle "Speed Player" en Visual
+    - ✅ Nuevo Toggle "Mobile Button" en Config
+    - ✅ Nuevo Toggle "Auto TP Down" en Combat
 ]]
 
 skipIntroEnabled = true
@@ -115,6 +103,14 @@ antiFlingEnabled = antiFlingEnabled or false
 setAntiDieVisual = nil
 setAntiFlingVisual = nil
 _G.RaptureToolAssets = {}
+
+-- NUEVAS VARIABLES
+hideEnemySpeedEnabled = false
+hideMobileButtonsEnabled = false
+autoTpDownEnabled = false
+setSpeedPlayerVisual = nil
+setMobileButtonVisual = nil
+setAutoTpDownVisual = nil
 
 stealMode = "V2"
 local STEAL_MODE_LOCKED = "V2"
@@ -1804,6 +1800,14 @@ function setupMovementAndIndicators(char)
         local char2 = LP.Character; if not char2 then return end
         local hum = char2:FindFirstChildOfClass("Humanoid"); local hrp = char2:FindFirstChild("HumanoidRootPart")
         if not hum or not hrp then return end
+
+        -- AUTO TP DOWN
+        if autoTpDownEnabled then
+            if hrp.Position.Y > 40 then
+                doTpDown()
+            end
+        end
+
         if not autoBatEnabled and not autoLeftEnabled and not autoRightEnabled and not batDesyncTpEnabled and not (_G._RaptureBatBypass and _G._RaptureBatBypass.enabled) then
             if _isRagdollState(hum) then lastMoveDir = _V3zero
             else
@@ -1849,6 +1853,7 @@ function buildConfigTable()
         dropMode = 2, stretchEnabled = stretchEnabled, stretchFOV = stretchFOV, stretchValue = stretchValue, fovEnabled = fovEnabled, fovValue = fovValue,
         uiScale = uiScaleValue, progressBarScale = progressBarScaleValue, tpBatEnabled = batDesyncTpEnabled, batBypassEnabled = batBypassEnabled,
         espEnabled = espEnabled, antiLag = antiLagEnabled, customSounds = customSoundsEnabled, minecraftBatSkinEnabled = minecraftBatSkinEnabled, minecraftBatSkinColorMode = minecraftBatSkinColorMode,
+        hideEnemySpeed = hideEnemySpeedEnabled, hideMobileButtons = hideMobileButtonsEnabled, autoTpDown = autoTpDownEnabled,
         mobileButtonPositions = savedButtonPositions, tpBatFloatingPos = tpBatFloatingPos, batBypassFloatingPos = batBypassFloatingPos, instaResetFloatingPos = instaResetFloatingPos,
         progressBarPos = savedProgressBarPos, lockUI = uiLocked, backgroundIndex = backgroundIndex, backgroundImageTransparency = backgroundImageTransparency, floatingButtonScale = floatingButtonScale, skipIntro = true,
     }
@@ -1881,6 +1886,14 @@ function loadAllSettings()
     espEnabled = data.espEnabled or false; antiLagEnabled = data.antiLag or false
     if data.aimbotMode then aimbotMode = data.aimbotMode; if aimbotMode ~= "V2" then aimbotMode = "V1" end else aimbotMode = "V1" end
     customSoundsEnabled = data.customSounds == true; batBypassEnabled = data.batBypassEnabled == true; minecraftBatSkinEnabled = data.minecraftBatSkinEnabled == true; minecraftBatSkinColorMode = data.minecraftBatSkinColorMode or "Default"
+    
+    hideEnemySpeedEnabled = data.hideEnemySpeed or false
+    hideMobileButtonsEnabled = data.hideMobileButtons or false
+    autoTpDownEnabled = data.autoTpDown or false
+    if MobilePanel and MobilePanel:FindFirstChild("FloatingPanel") then
+        MobilePanel.FloatingPanel.Visible = not hideMobileButtonsEnabled
+    end
+    
     uiScaleValue = data.uiScale or uiScaleValue; progressBarScaleValue = data.progressBarScale or progressBarScaleValue
     if mainUIScale then mainUIScale.Scale = uiScaleValue / 100 end; if pbScale then pbScale.Scale = progressBarScaleValue / 100 end
     if data.tpBatEnabled then task.defer(function() startBatDesyncTp(); if batDesyncTpSetVisual then batDesyncTpSetVisual(true) end end) else if batDesyncTpSetVisual then batDesyncTpSetVisual(false) end end
@@ -1906,6 +1919,8 @@ function resetToFactoryDefaults()
         antiFlingEnabled = false; antiDieEnabled = false; medusaCounterEnabled = false; batCounterEnabled = false; ragdollCountdownEnabled = false
         autoBatEnabled = false; autoLeftEnabled = false; autoRightEnabled = false; unwalkEnabled = false; uiLocked = true; CONFIG.AUTO_STEAL_ENABLED = false; BAT_AIMBOT_SPEED = 58; aimbotMode = "V1"
         customSoundsEnabled = false; batBypassEnabled = false; minecraftBatSkinEnabled = false; minecraftBatSkinColorMode = "Default"
+        hideEnemySpeedEnabled = false; hideMobileButtonsEnabled = false; autoTpDownEnabled = false
+        if MobilePanel and MobilePanel:FindFirstChild("FloatingPanel") then MobilePanel.FloatingPanel.Visible = true end
         if _G._RaptureBatBypass and _G._RaptureBatBypass.enabled then _G.RaptureStopBatBypass() end; if deactivateAllBatSkins then pcall(deactivateAllBatSkins) end
         stretchEnabled = false; stretchValue = 0.7; fovValue = 70; uiScaleValue = 66; progressBarScaleValue = 55; backgroundIndex = 1; floatingButtonScale = 1; espEnabled = false; antiLagEnabled = false
         for key, val in pairs(DEFAULT_KB) do if KB[key] then KB[key].kb = val.kb; KB[key].gp = val.gp end end
@@ -1922,6 +1937,9 @@ function resetToFactoryDefaults()
             if autoLeftSetVisual then autoLeftSetVisual(false) end; if autoRightSetVisual then autoRightSetVisual(false) end; if autoBatSetVisual then autoBatSetVisual(false) end
             if batDesyncTpSetVisual then batDesyncTpSetVisual(false) end; if batBypassSetVisual then batBypassSetVisual(false) end; if setESPVisual then setESPVisual(false) end
             if setAntiLagVisual then setAntiLagVisual(false) end; if setFovVisual then setFovVisual(false) end; if setAntiDieVisual then setAntiDieVisual(false) end; if setAntiFlingVisual then setAntiFlingVisual(false) end
+            if setSpeedPlayerVisual then setSpeedPlayerVisual(false) end
+            if setMobileButtonVisual then setMobileButtonVisual(false) end
+            if setAutoTpDownVisual then setAutoTpDownVisual(false) end
             if _G.stretchToggleSetter then _G.stretchToggleSetter(false) end; if aimbotModeSetVisual then aimbotModeSetVisual("V1") end; if antiRagSetVisual then antiRagSetVisual("V1") end
             if _G.RaptureCustomSounds then _G.RaptureCustomSounds.setEnabled(false) end; refreshSpeedModeLabel()
         end)
@@ -1956,7 +1974,11 @@ function updateEnemySpeedLabels()
                         enemySpeedLabels[player] = tl; label = tl
                     end
                 elseif label.Parent and label.Parent.Parent ~= char then local head = char:FindFirstChild("Head"); if head then label.Parent.Parent = head end end
-                if label then label.Text = string.format("%.1f", speed); if label.TextColor3 ~= color then label.TextColor3 = color end end
+                if label then 
+                    label.Text = string.format("%.1f", speed); 
+                    if label.TextColor3 ~= color then label.TextColor3 = color end
+                    if label.Parent then label.Parent.Enabled = not hideEnemySpeedEnabled end
+                end
             else
                 local label = enemySpeedLabels[player]; if label and label.Parent and label.Parent.Parent then label.Parent.Parent = nil end; enemySpeedLabels[player] = nil
             end
@@ -2254,6 +2276,13 @@ function buildGui()
     setMedusaVisual = mkToggle(combatPage, "Medusa Counter", function(on) medusaCounterEnabled = on; if on then if LP.Character then setupMedusaCounter(LP.Character) end else stopMedusaCounter() end; task.defer(saveAllSettings) end)
     setRagdollTimerVisual = mkToggle(combatPage, "Ragdoll Countdown", function(on) ragdollCountdownEnabled = on; if on then hookRagdollCountdown(LP.Character) else if _G._RaptureRCD.conn then pcall(function() _G._RaptureRCD.conn:Disconnect() end); _G._RaptureRCD.conn = nil end; if _G._RaptureRCD.charConn then pcall(function() _G._RaptureRCD.charConn:Disconnect() end); _G._RaptureRCD.charConn = nil end; if ragdollCountdownLabel then ragdollCountdownLabel.Visible = false; ragdollCountdownLabel.Text = "" end end; task.defer(saveAllSettings) end)
     setAntiDieVisual = mkToggle(combatPage, "Anti Die", function(on) antiDieEnabled = on; if on then _antiDie.StartEngine() else _antiDie.StopEngine() end; task.defer(saveAllSettings) end)
+    
+    -- NUEVO AUTO TP DOWN
+    setAutoTpDownVisual = mkToggle(combatPage, "Auto TP Down", function(on)
+        autoTpDownEnabled = on
+        task.defer(saveAllSettings)
+    end)
+    
     setAntiFlingVisual = mkToggle(combatPage, "Anti Fling", function(on) antiFlingEnabled = on; if on then startAntiFling() else stopAntiFling() end; task.defer(saveAllSettings) end)
     setAntiRagVisual = mkToggle(combatPage, "Anti Ragdoll", function(on) setAntiRagdollEnabled(on) end)
     antiRagSetVisual = mkCollapsibleSlider(combatPage, "Anti Ragdoll Version", {"V1", "V2"}, function() return antiRagdollVersion == "v1" and "V1" or "V2" end, function(v) local newV = (v == "V2") and "v2" or "v1"; setAntiRagdollVersion(newV); if saveAmbitiousConfig then pcall(saveAmbitiousConfig) end end)
@@ -2272,6 +2301,13 @@ function buildGui()
 
     local visualPage = contentPages["Visual"]
     setESPVisual = mkToggle(visualPage, "ESP Players", function(on) if on then startESP() else stopESP() end; task.defer(saveAllSettings) end)
+    
+    -- NUEVO SPEED PLAYER
+    setSpeedPlayerVisual = mkToggle(visualPage, "Speed Player", function(on) 
+        hideEnemySpeedEnabled = on
+        task.defer(saveAllSettings)
+    end)
+    
     setAntiLagVisual = mkToggle(visualPage, "Anti Lag", function(on) if on then enableAntiLag() else disableAntiLag() end; task.defer(saveAllSettings) end)
     do
         local row = mkRow(visualPage, 40); mkLabel(row, "Stretch Rez"); local stretchPill, stretchDot = mkPill(row, 10); local stretchOn = false
@@ -2295,6 +2331,16 @@ function buildGui()
     uiScaleBox = mkStepRow(configPage, "UI Scale", function() return uiScaleValue end, function(v) uiScaleValue = v; if mainUIScale then mainUIScale.Scale = v / 100 end end, 50, 150, 1)
     progressBarScaleBox = mkStepRow(configPage, "Progress Bar Scale", function() return progressBarScaleValue end, function(v) progressBarScaleValue = v; if pbScale then pbScale.Scale = v / 100 end end, 30, 150, 1)
     mkStepRow(configPage, "Button Scale", function() return _floor(floatingButtonScale * 100) end, function(v) floatingButtonScale = v / 100; applyFloatingButtonScale() end, 50, 200, 1)
+    
+    -- NUEVO MOBILE BUTTON
+    setMobileButtonVisual = mkToggle(configPage, "Mobile Button", function(on)
+        hideMobileButtonsEnabled = on
+        if MobilePanel and MobilePanel:FindFirstChild("FloatingPanel") then
+            MobilePanel.FloatingPanel.Visible = not on
+        end
+        task.defer(saveAllSettings)
+    end)
+    
     do
         local row = mkRow(configPage, 44); mkLabel(row, "Background Image"); local btn = Instance.new("TextButton", row); btn.Size = UDim2.new(0, 80, 0, 24); btn.Position = UDim2.new(1, -92, 0.5, -12); btn.BackgroundColor3 = Color3.fromRGB(18, 14, 24); btn.BackgroundTransparency = 0.3; btn.BorderSizePixel = 0; btn.Text = "Selec"; btn.TextColor3 = Color3.fromRGB(255, 0, 0); btn.Font = Enum.Font.GothamBlack; btn.TextSize = 10; btn.ZIndex = 8
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 12); btn.Activated:Connect(function() openImagePicker() end)
@@ -2314,6 +2360,9 @@ function buildGui()
                     if autoLeftSetVisual then autoLeftSetVisual(false) end; if autoRightSetVisual then autoRightSetVisual(false) end; if autoBatSetVisual then autoBatSetVisual(false) end
                     if batDesyncTpSetVisual then batDesyncTpSetVisual(false) end; if batBypassSetVisual then batBypassSetVisual(false) end; if setESPVisual then setESPVisual(false) end
                     if setAntiLagVisual then setAntiLagVisual(false) end; if setFovVisual then setFovVisual(false) end; if setAntiDieVisual then setAntiDieVisual(false) end; if setAntiFlingVisual then setAntiFlingVisual(false) end
+                    if setSpeedPlayerVisual then setSpeedPlayerVisual(false) end
+                    if setMobileButtonVisual then setMobileButtonVisual(false) end
+                    if setAutoTpDownVisual then setAutoTpDownVisual(false) end
                     if _G.stretchToggleSetter then _G.stretchToggleSetter(false) end; if aimbotModeSetVisual then aimbotModeSetVisual("V1") end; if antiRagSetVisual then antiRagSetVisual("V1") end
                     if customSoundsSetVisual then customSoundsSetVisual(false) end; refreshSpeedModeLabel()
                 end)
@@ -2542,6 +2591,11 @@ function updateUIFromLoaded()
     if aimbotModeSetVisual then aimbotModeSetVisual(aimbotMode) end; if antiRagSetVisual then antiRagSetVisual(antiRagdollVersion == "v1" and "V1" or "V2") end
     if customSoundsEnabled and _G.RaptureCustomSounds then _G.RaptureCustomSounds.setEnabled(true) end
     if minecraftBatSkinEnabled then MinecraftBatSkin.State.enabled = true; MinecraftBatSkin.SetColorMode(minecraftBatSkinColorMode); task.defer(function() pcall(MinecraftBatSkin.Apply) end) else MinecraftBatSkin.State.enabled = false; task.defer(function() pcall(MinecraftBatSkin.Remove) end) end
+    
+    if setSpeedPlayerVisual then setSpeedPlayerVisual(hideEnemySpeedEnabled) end
+    if setMobileButtonVisual then setMobileButtonVisual(hideMobileButtonsEnabled) end
+    if setAutoTpDownVisual then setAutoTpDownVisual(autoTpDownEnabled) end
+    
     startEnemySpeed(); toggleLockUI(uiLocked)
 end
 
@@ -2598,9 +2652,8 @@ end)
 task.defer(function() task.wait(0.1); _RaptureApplyThemeToSliders() end)
 
 print("===========================================")
-print("  PARCH3 DUELS CARGADO v9.1.4")
-print("  ✅ Cartas.jpg reemplaza Amine.jpg")
-print("  ✅ Parchered.jpg en título y miniBtn")
-print("  ✅ Fondo Steal.jpg en barra Auto Steal")
-print("  ✅ Barra Auto Steal AZUL")
+print("  PARCH3 DUELS CARGADO v9.1.5")
+print("  ✅ Speed Player Toggle")
+print("  ✅ Mobile Button Toggle")
+print("  ✅ Auto TP Down Toggle")
 print("===========================================")
