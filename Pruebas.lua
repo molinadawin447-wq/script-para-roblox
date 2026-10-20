@@ -10,12 +10,10 @@ local player = Players.LocalPlayer
 
 --==================== CONFIGURACIÓN ==========================
 local CONFIG = {
-	PIES_POR_SALTO  = 8,      -- pies que avanza por toque
+	PIES_POR_SALTO  = 12,     -- pies que avanza por toque
 	STUDS_POR_PIE   = 0.93,   -- 1 pie ≈ 0.93 studs (pon 1 si usas 1 stud = 1 pie)
-	USOS_POR_CARGA  = 4,      -- toques antes de desactivarse
-	TIEMPO_RECARGA  = 1.5,    -- segundos desactivado
-	TAMANO_BOTON    = 120,    -- tamaño del cuadrado en píxeles
-	TAMANO_L        = 30,     -- tamaño de la "L"
+	TAMANO_BOTON    = 70,     -- tamaño del cuadrado en píxeles (más pequeño)
+	TAMANO_L        = 20,     -- tamaño de la "L"
 	UMBRAL_ARRASTRE = 12,     -- píxeles de movimiento para contar como arrastre
 }
 
@@ -27,21 +25,17 @@ local COLOR = {
 	textoNormal   = Color3.fromRGB(255, 255, 255),
 	fondoPresion  = Color3.fromRGB(255, 255, 255),
 	textoPresion  = Color3.fromRGB(0, 0, 0),
-	fondoInactivo = Color3.fromRGB(55, 55, 55),
-	textoInactivo = Color3.fromRGB(150, 150, 150),
 	L_libre       = Color3.fromRGB(40, 170, 80),
 	L_bloqueado   = Color3.fromRGB(200, 55, 55),
 }
 
 --==================== ESTADO =================================
 local estado = {
-	centro     = Vector2.new(0, 0),
-	usos       = CONFIG.USOS_POR_CARGA,
-	recargando = false,
-	bloqueado  = false,   -- controlado por la "L"
+	centro      = Vector2.new(0, 0),
+	bloqueado   = false,   -- controlado por la "L"
 	arrastrando = false,
-	recorrido  = 0,
-	presionado = false,
+	recorrido   = 0,
+	presionado  = false,
 }
 
 --==================== INTERFAZ ===============================
@@ -128,9 +122,6 @@ local function aplicarVisual()
 	if estado.presionado then
 		boton.BackgroundColor3 = COLOR.fondoPresion
 		boton.TextColor3 = COLOR.textoPresion
-	elseif estado.recargando or estado.usos <= 0 then
-		boton.BackgroundColor3 = COLOR.fondoInactivo
-		boton.TextColor3 = COLOR.textoInactivo
 	else
 		boton.BackgroundColor3 = COLOR.fondoNormal
 		boton.TextColor3 = COLOR.textoNormal
@@ -173,21 +164,7 @@ local function teletransportar()
 end
 
 local function usarBoton()
-	if estado.recargando or estado.usos <= 0 then return end
-	if not teletransportar() then return end
-
-	estado.usos -= 1
-	aplicarVisual()
-
-	if estado.usos <= 0 then
-		estado.recargando = true
-		aplicarVisual()
-		task.delay(CONFIG.TIEMPO_RECARGA, function()
-			estado.usos = CONFIG.USOS_POR_CARGA
-			estado.recargando = false
-			aplicarVisual()
-		end)
-	end
+	teletransportar()
 end
 
 --==================== ENTRADA DEL BOTÓN ======================
