@@ -1,5 +1,5 @@
 --[[
-    LocalScript: SpiritControlGUI v7
+    LocalScript: SpiritControlGUI v8
     Ubicación: StarterPlayer > StarterPlayerScripts
 ]]
 
@@ -16,33 +16,30 @@ local CONFIG = {
     ButtonSize        = 60,
     ButtonSeparation  = 15,
     DragPadding       = 40,
-    TapThreshold      = 10,
+    TapThreshold      = 15,     -- ⬆️ más permisivo: taps en móvil no se cancelan
     LockSize          = 18,
 
-    -- ==== CLONES CON LAG (teletransporte rápido) ====
     CloneCount        = 3,
-    TeleportInterval  = 0.04,   -- cada cuánto se teletransportan (0.04 ≈ 25 Hz)
-    CloneRadius       = 12,     -- radio alrededor tuyo
-    CloneHeightMin    = -2,     -- altura mínima respecto a ti
-    CloneHeightMax    = 8,      -- altura máxima
+    TeleportInterval  = 0.04,
+    CloneRadius       = 12,
+    CloneHeightMin    = -2,
+    CloneHeightMax    = 8,
 
-    -- ==== ATAQUE ====
     AttackDetectRadius = 15,
     AttackCooldown     = 0.6,
     AttackDuration     = 0.35,
 
-    -- ==== SPEED ====
     SpeedDistance = 8,
     SpeedCooldown = 0.15,
 
-    BatAIName        = "BatAI",-- <-- cambia al nombre real de tu bot
+    BatAIName        = "BatAI",
     BrainrotToolName = nil,
 }
 
 -- ================== ESTADO ==================
 local spiritActive    = false
 local clones          = {}
-local cloneNextJump   = {}    -- [i] = tick en que puede volver a saltar
+local cloneNextJump   = {}
 local spiritConn      = nil
 local homeCenter      = nil
 local attackCenter    = nil
@@ -174,10 +171,9 @@ local function createSpiritClone()
     return clone
 end
 
--- Posición aleatoria alrededor del centro (círculo + altura variable)
 local function randomOrbitPos(center)
     local theta = math.random() * math.pi * 2
-    local r     = math.sqrt(math.random()) * CONFIG.CloneRadius  -- distribución uniforme
+    local r     = math.sqrt(math.random()) * CONFIG.CloneRadius
     local h     = CONFIG.CloneHeightMin + math.random() * (CONFIG.CloneHeightMax - CONFIG.CloneHeightMin)
     return center + Vector3.new(math.cos(theta) * r, h, math.sin(theta) * r)
 end
@@ -191,17 +187,14 @@ local function updateClones()
         if c and c.Parent then
             local nextJump = cloneNextJump[i] or 0
             if now >= nextJump then
-                -- Teletransporte instantáneo (efecto lag)
                 local pos = randomOrbitPos(center)
                 c:PivotTo(CFrame.new(pos))
-                -- Cada clon tiene su propio tiempo (aleatorio) → efecto desync
                 local jitter = CONFIG.TeleportInterval * (0.6 + math.random() * 0.9)
                 cloneNextJump[i] = now + jitter
             end
         end
     end
 
-    -- Brainrot en la mano viaja con el clon principal (teleport instantáneo)
     local char = player.Character
     if char and clones[1] and clones[1].Parent then
         local tool = findBrainrotTool(char)
@@ -226,25 +219,31 @@ end
 
 -- ================== INICIO / FIN ==================
 local function startSpirit()
-    if spiritActive then return end
+    if spiritActive then return false end
     local char = player.Character
-    if not char then return end
+    if not char then return false end
     local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
+    if not hrp then return false end
 
+    -- Marcar como activo ANTES de cualquier operación costosa
     spiritActive  = true
     homeCenter    = hrp.Position
     savedPlayerCF = hrp.CFrame
     cloneNextJump = {}
+    clones        = {}
 
-    -- 1) Clones visibles (aún en spawn, se teletransportan al primer frame)
-    clones = {}
+    -- 1) Crear clones
     for i = 1, CONFIG.CloneCount do
         local c = createSpiritClone()
         if c then
             clones[#clones + 1] = c
             cloneNextJump[#clones] = 0
         end
+    end
+    if #clones == 0 then
+        -- Falló la creación → revertir
+        spiritActive = false
+        return false
     end
 
     -- 2) Congelar humanoide
@@ -259,7 +258,7 @@ local function startSpirit()
     -- 3) Invisible
     setCharacterVisibility(false)
 
-    -- 4) Reducir interacción de tu hitbox (local)
+    -- 4) Reducir interacción de hitbox
     for _, d in ipairs(char:GetDescendants()) do
         if d:IsA("BasePart") then
             d.CanQuery = false
@@ -282,7 +281,6 @@ local function startSpirit()
         if not spiritActive then return end
         local now = tick()
 
-        -- A) Detectar atacante
         if now - lastAttackTime >= CONFIG.AttackCooldown then
             local attacker = findNearestAttacker()
             if attacker then
@@ -295,10 +293,8 @@ local function startSpirit()
             end
         end
 
-        -- B) Clones con lag (teletransporte rápido)
         updateClones()
 
-        -- C) Bat siguiendo al clon #1
         if not cachedBat or not cachedBat.Parent or now > nextBatSearch then
             cachedBat = findBat()
             nextBatSearch = now + 0.5
@@ -311,6 +307,8 @@ local function startSpirit()
             end
         end
     end)
+
+    return true
 end
 
 local function stopSpirit()
@@ -352,7 +350,7 @@ local function stopSpirit()
     attackCenter = nil
 end
 
--- ================== SPEED (8 studs) ==================
+-- ================== SPEED ==================
 local function doSpeed()
     local now = tick()
     if now - lastSpeedTime < CONFIG.SpeedCooldown then return end
@@ -384,9 +382,14 @@ gui.IgnoreGuiInset   = true
 gui.ZIndexBehavior   = Enum.ZIndexBehavior.Sibling
 gui.Parent           = playerGui
 
-local function styleButton(btn)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextColor3       = Color3.fromRGB(0, 0, 0)
+local function styleNormal(btn)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)   -- blanco
+    btn.TextColor3       = Color3.fromRGB(0, 0, 0)          -- texto negro
+end
+
+local function styleActive(btn)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)          -- negro
+    btn.TextColor3       = Color3.fromRGB(255, 255, 255)    -- texto blanco
 end
 
 local function createButton(text, offsetX)
@@ -400,7 +403,7 @@ local function createButton(text, offsetX)
     btn.TextScaled      = true
     btn.AutoButtonColor = false
     btn.ZIndex          = 50
-    styleButton(btn)
+    styleNormal(btn)
     btn.Parent = gui
 
     local corner = Instance.new("UICorner")
@@ -414,6 +417,7 @@ local function createButton(text, offsetX)
     pad.PaddingBottom = UDim.new(0, 8)
     pad.Parent = btn
 
+    -- Sub-botón "L" en la esquina superior derecha
     local lBtn = Instance.new("TextButton")
     lBtn.Name            = "LockL"
     lBtn.Size            = UDim2.fromOffset(CONFIG.LockSize, CONFIG.LockSize)
@@ -450,22 +454,27 @@ end
 local btnFalse = createButton("false", 30)
 local btnSpeed = createButton("speed", 30 + CONFIG.ButtonSize + CONFIG.ButtonSeparation)
 
+-- ================== TOGGLE (corregido) ==================
 local function toggleSpirit()
     if spiritActive then
+        -- Desactivar
         stopSpirit()
-        styleButton(btnFalse)
+        styleNormal(btnFalse)            -- ⬅ vuelve a blanco
     else
-        startSpirit()
-        btnFalse.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        btnFalse.TextColor3       = Color3.fromRGB(255, 255, 255)
+        -- Activar SOLO si startSpirit tuvo éxito
+        local ok = startSpirit()
+        if ok then
+            styleActive(btnFalse)        -- ⬅ se pone negro
+        else
+            styleNormal(btnFalse)        -- si falló, no te miente con negro
+        end
     end
 end
 
 local function flashSpeed()
-    btnSpeed.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    btnSpeed.TextColor3       = Color3.fromRGB(255, 255, 255)
+    styleActive(btnSpeed)
     task.delay(0.15, function()
-        if btnSpeed and btnSpeed.Parent then styleButton(btnSpeed) end
+        if btnSpeed and btnSpeed.Parent then styleNormal(btnSpeed) end
     end)
 end
 
@@ -547,9 +556,33 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+-- ================== SEGURIDAD ==================
+-- Si el personaje respawnea mientras estaba activo, limpiar todo
 player.CharacterAdded:Connect(function()
     if spiritActive then
         stopSpirit()
-        styleButton(btnFalse)
+        styleNormal(btnFalse)
+    end
+end)
+
+-- Red de seguridad: si por alguna razón el botón está negro
+-- pero spiritActive es false (o al revés), sincronizar cada segundo
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if spiritActive then
+            if btnFalse.BackgroundColor3 ~= Color3.fromRGB(0, 0, 0) then
+                styleActive(btnFalse)
+            end
+            if #clones == 0 then
+                -- Consistencia: si está "activo" pero sin clones, desactivar
+                stopSpirit()
+                styleNormal(btnFalse)
+            end
+        else
+            if btnFalse.BackgroundColor3 ~= Color3.fromRGB(255, 255, 255) then
+                styleNormal(btnFalse)
+            end
+        end
     end
 end)
