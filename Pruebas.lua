@@ -1,5 +1,5 @@
 --[[
-    LocalScript: SpiritControlGUI v5
+    LocalScript: SpiritControlGUI v7
     Ubicación: StarterPlayer > StarterPlayerScripts
 ]]
 
@@ -19,38 +19,39 @@ local CONFIG = {
     TapThreshold      = 10,
     LockSize          = 18,
 
-    SpiritRadius       = 15,
-    SpiritStepInterval = 0.10,   -- ⬇️ velocidad del espíritu bajada
-    SpiritStepSize     = 5,
+    -- ==== CLONES CON LAG (teletransporte rápido) ====
+    CloneCount        = 3,
+    TeleportInterval  = 0.04,   -- cada cuánto se teletransportan (0.04 ≈ 25 Hz)
+    CloneRadius       = 12,     -- radio alrededor tuyo
+    CloneHeightMin    = -2,     -- altura mínima respecto a ti
+    CloneHeightMax    = 8,      -- altura máxima
 
+    -- ==== ATAQUE ====
     AttackDetectRadius = 15,
-    AttackCooldown     = 0.3,
+    AttackCooldown     = 0.6,
+    AttackDuration     = 0.35,
 
-    SpeedDistance  = 6,          -- 6 studs hacia adelante
-    SpeedCooldown  = 0.15,
+    -- ==== SPEED ====
+    SpeedDistance = 8,
+    SpeedCooldown = 0.15,
 
-    -- ==== SEÑUELO / NO PODER SER GOLPEADO ====
-    PlayerSafeHeight       = 400,   -- studs arriba (pon 0 para desactivar)
-    EnemyChaseRadius       = 40,
-    EnemyChaseLerp         = 0.3,
-    EnemyWeaponChase       = true,  -- redirigir armas enemigas al clon
-
-    BatAIName        = "BatAI",     -- <-- cambia al nombre real de tu bot
+    BatAIName        = "BatAI",-- <-- cambia al nombre real de tu bot
     BrainrotToolName = nil,
 }
 
 -- ================== ESTADO ==================
 local spiritActive    = false
-local spiritClone     = nil
+local clones          = {}
+local cloneNextJump   = {}    -- [i] = tick en que puede volver a saltar
 local spiritConn      = nil
-local basePos         = nil
-local spiritPos       = nil
+local homeCenter      = nil
+local attackCenter    = nil
+local attackUntil     = 0
 local savedWelds      = {}
 local savedWalkSpeed  = nil
 local savedJumpPower  = nil
 local savedPlayerCF   = nil
 local lastSpeedTime   = -math.huge
-local lastStepTime    = 0
 local lastAttackTime  = -math.huge
 local cachedBat       = nil
 local nextBatSearch   = 0
@@ -119,22 +120,8 @@ local function reattachHandle()
     savedWelds = {}
 end
 
-local function isValidMapPosition(pos)
-    local exclude = {}
-    if spiritClone then table.insert(exclude, spiritClone) end
-    if player.Character then table.insert(exclude, player.Character) end
-    raycastParams.FilterDescendantsInstances = exclude
-    local result = workspace:Raycast(pos + Vector3.new(0, 100, 0), Vector3.new(0, -500, 0), raycastParams)
-    return result ~= nil
-end
-
 local function findNearestAttacker()
-    local char = player.Character
-    if not char then return nil end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    -- Usamos basePos (posición "real" del jugador en el mapa, no la de seguridad)
-    local refPos = basePos or hrp.Position
+    if not homeCenter then return nil end
     local nearest, nearestDist = nil, CONFIG.AttackDetectRadius
     for _, other in ipairs(Players:GetPlayers()) do
         if other ~= player then
@@ -143,7 +130,7 @@ local function findNearestAttacker()
                 local ohrp = oc:FindFirstChild("HumanoidRootPart")
                 local ohum = oc:FindFirstChildOfClass("Humanoid")
                 if ohrp and ohum and ohum.Health > 0 then
-                    local d = (ohrp.Position - refPos).Magnitude
+                    local d = (ohrp.Position - homeCenter).Magnitude
                     if d <= nearestDist then
                         nearest, nearestDist = oc, d
                     end
@@ -154,7 +141,7 @@ local function findNearestAttacker()
     return nearest
 end
 
--- ================== SPIRIT (CLON DEL PERSONAJE) ==================
+-- ================== CLONES ==================
 local function createSpiritClone()
     local char = player.Character
     if not char then return nil end
@@ -187,23 +174,39 @@ local function createSpiritClone()
     return clone
 end
 
-local function updateSpiritPosition(targetPos)
-    spiritPos = targetPos
+-- Posición aleatoria alrededor del centro (círculo + altura variable)
+local function randomOrbitPos(center)
+    local theta = math.random() * math.pi * 2
+    local r     = math.sqrt(math.random()) * CONFIG.CloneRadius  -- distribución uniforme
+    local h     = CONFIG.CloneHeightMin + math.random() * (CONFIG.CloneHeightMax - CONFIG.CloneHeightMin)
+    return center + Vector3.new(math.cos(theta) * r, h, math.sin(theta) * r)
+end
 
-    if spiritClone then
-        local root = spiritClone:FindFirstChild("HumanoidRootPart")
-                   or spiritClone.PrimaryPart
-                   or spiritClone:FindFirstChildWhichIsA("BasePart")
-        if root then
-            spiritClone:PivotTo(CFrame.new(targetPos))
+local function updateClones()
+    local now = tick()
+    local center = (now < attackUntil and attackCenter) or homeCenter
+    if not center then return end
+
+    for i, c in ipairs(clones) do
+        if c and c.Parent then
+            local nextJump = cloneNextJump[i] or 0
+            if now >= nextJump then
+                -- Teletransporte instantáneo (efecto lag)
+                local pos = randomOrbitPos(center)
+                c:PivotTo(CFrame.new(pos))
+                -- Cada clon tiene su propio tiempo (aleatorio) → efecto desync
+                local jitter = CONFIG.TeleportInterval * (0.6 + math.random() * 0.9)
+                cloneNextJump[i] = now + jitter
+            end
         end
     end
 
+    -- Brainrot en la mano viaja con el clon principal (teleport instantáneo)
     local char = player.Character
-    if char then
-        local t = findBrainrotTool(char)
-        if t then
-            local h = t:FindFirstChild("Handle")
+    if char and clones[1] and clones[1].Parent then
+        local tool = findBrainrotTool(char)
+        if tool then
+            local h = tool:FindFirstChild("Handle")
             if h and h:IsA("BasePart") then
                 for _, j in ipairs(h:GetJoints()) do
                     if j:IsA("JointInstance") and j.Enabled then
@@ -211,37 +214,17 @@ local function updateSpiritPosition(targetPos)
                         j.Enabled = false
                     end
                 end
-                h.CFrame = CFrame.new(targetPos + Vector3.new(0, 1.5, 0))
-                h.LocalTransparencyModifier = 0
-            end
-        end
-    end
-end
-
--- Redirige visualmente las armas de enemigos cercanos hacia el clon
-local function redirectEnemyWeapons()
-    if not CONFIG.EnemyWeaponChase or not spiritPos then return end
-    for _, other in ipairs(Players:GetPlayers()) do
-        if other ~= player then
-            local oc = other.Character
-            if oc then
-                local ohrp = oc:FindFirstChild("HumanoidRootPart")
-                if ohrp and (ohrp.Position - (basePos or spiritPos)).Magnitude <= CONFIG.EnemyChaseRadius then
-                    for _, d in ipairs(oc:GetDescendants()) do
-                        if d:IsA("Tool") then
-                            local h = d:FindFirstChild("Handle")
-                            if h and h:IsA("BasePart") then
-                                local target = CFrame.new(spiritPos + Vector3.new(0, 1.5, 0))
-                                h.CFrame = h.CFrame:Lerp(target, CONFIG.EnemyChaseLerp)
-                            end
-                        end
-                    end
+                local c1root = clones[1]:FindFirstChild("HumanoidRootPart") or clones[1].PrimaryPart
+                if c1root then
+                    h.CFrame = c1root.CFrame + Vector3.new(0, 1.5, 0)
+                    h.LocalTransparencyModifier = 0
                 end
             end
         end
     end
 end
 
+-- ================== INICIO / FIN ==================
 local function startSpirit()
     if spiritActive then return end
     local char = player.Character
@@ -249,14 +232,20 @@ local function startSpirit()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    spiritActive = true
-    basePos      = hrp.Position
-    spiritPos    = basePos + Vector3.new(0, 2, 0)
-    lastStepTime = 0
+    spiritActive  = true
+    homeCenter    = hrp.Position
     savedPlayerCF = hrp.CFrame
+    cloneNextJump = {}
 
-    -- 1) Clonar personaje (queda en la posición original)
-    spiritClone = createSpiritClone()
+    -- 1) Clones visibles (aún en spawn, se teletransportan al primer frame)
+    clones = {}
+    for i = 1, CONFIG.CloneCount do
+        local c = createSpiritClone()
+        if c then
+            clones[#clones + 1] = c
+            cloneNextJump[#clones] = 0
+        end
+    end
 
     -- 2) Congelar humanoide
     local hum = char:FindFirstChildOfClass("Humanoid")
@@ -265,13 +254,20 @@ local function startSpirit()
         savedJumpPower = hum.JumpPower
         hum.WalkSpeed  = 0
         hum.JumpPower  = 0
-        hum.PlatformStand = true
     end
 
     -- 3) Invisible
     setCharacterVisibility(false)
 
-    -- 4) Desoldar brainrot
+    -- 4) Reducir interacción de tu hitbox (local)
+    for _, d in ipairs(char:GetDescendants()) do
+        if d:IsA("BasePart") then
+            d.CanQuery = false
+            d.CanTouch = false
+        end
+    end
+
+    -- 5) Desoldar brainrot
     local tool   = findBrainrotTool(char)
     local handle = tool and tool:FindFirstChild("Handle")
     if handle and handle:IsA("BasePart") then
@@ -279,82 +275,41 @@ local function startSpirit()
         handle.LocalTransparencyModifier = 0
     end
 
-    -- 5) Teletransportar el personaje real a zona segura (NO el clon)
-    if CONFIG.PlayerSafeHeight > 0 then
-        hrp.CFrame = CFrame.new(savedPlayerCF.Position + Vector3.new(0, CONFIG.PlayerSafeHeight, 0)) * savedPlayerCF.Rotation
-        -- Desactivar hitbox local
-        for _, d in ipairs(char:GetDescendants()) do
-            if d:IsA("BasePart") then
-                d.CanQuery = false
-                d.CanTouch = false
-                d.CanCollide = false
-            end
-        end
-    end
-
     cachedBat     = findBat()
     nextBatSearch = tick() + 0.5
 
     spiritConn = RunService.Heartbeat:Connect(function()
         if not spiritActive then return end
-        if not player.Character then return end
-
         local now = tick()
-        local targetPos = nil
 
-        -- A) Enemigo cerca -> espíritu + brainrot + bat teletransportan al atacante
+        -- A) Detectar atacante
         if now - lastAttackTime >= CONFIG.AttackCooldown then
             local attacker = findNearestAttacker()
             if attacker then
                 local ahrp = attacker:FindFirstChild("HumanoidRootPart")
                 if ahrp then
-                    targetPos = ahrp.Position + Vector3.new(0, 2, 0)
+                    attackCenter = ahrp.Position + Vector3.new(0, 2, 0)
+                    attackUntil  = now + CONFIG.AttackDuration
                     lastAttackTime = now
                 end
             end
         end
 
-        -- B) Sin enemigo -> pasitos dentro del círculo
-        if not targetPos and now - lastStepTime >= CONFIG.SpiritStepInterval then
-            lastStepTime = now
-            local currentPos = spiritPos or basePos
-            local stepDir = Vector3.new(
-                math.random() - 0.5,
-                math.random() - 0.5,
-                math.random() - 0.5
-            )
-            if stepDir.Magnitude > 0.001 then stepDir = stepDir.Unit end
-            local candidate = currentPos + stepDir * CONFIG.SpiritStepSize
+        -- B) Clones con lag (teletransporte rápido)
+        updateClones()
 
-            local fromBase = candidate - basePos
-            if fromBase.Magnitude > CONFIG.SpiritRadius then
-                candidate = basePos + fromBase.Unit * CONFIG.SpiritRadius
-            end
-
-            if isValidMapPosition(candidate) then
-                targetPos = candidate
-            end
-        end
-
-        if targetPos then
-            updateSpiritPosition(targetPos)
-        end
-
-        -- C) Bat propio persiguiendo al clon
+        -- C) Bat siguiendo al clon #1
         if not cachedBat or not cachedBat.Parent or now > nextBatSearch then
             cachedBat = findBat()
             nextBatSearch = now + 0.5
         end
-        if cachedBat and spiritPos then
+        if cachedBat and clones[1] and clones[1].Parent then
             local bp = getBatPart(cachedBat)
-            if bp then
-                local targetCF = CFrame.new(spiritPos + Vector3.new(0, 2, 0))
-                bp.CFrame = bp.CFrame:Lerp(targetCF, 0.4)
+            local c1root = clones[1]:FindFirstChild("HumanoidRootPart") or clones[1].PrimaryPart
+            if bp and c1root then
+                bp.CFrame = bp.CFrame:Lerp(c1root.CFrame + Vector3.new(0, 2, 0), 0.4)
             end
         end
-
-        -- D) Señuelo: armas de enemigos cercanos se redirigen al clon
-        redirectEnemyWeapons()
     end)
 end
 
@@ -362,29 +317,29 @@ local function stopSpirit()
     if not spiritActive then return end
     spiritActive = false
     if spiritConn then spiritConn:Disconnect(); spiritConn = nil end
-    if spiritClone then spiritClone:Destroy(); spiritClone = nil end
+    for _, c in ipairs(clones) do
+        if c then c:Destroy() end
+    end
+    clones        = {}
+    cloneNextJump = {}
     setCharacterVisibility(true)
 
     local char = player.Character
     if char then
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then
-            hum.PlatformStand = false
             hum.WalkSpeed = savedWalkSpeed or 16
             hum.JumpPower = savedJumpPower or 50
         end
-        -- Restaurar hitbox y posición
         for _, d in ipairs(char:GetDescendants()) do
             if d:IsA("BasePart") then
                 d.CanQuery = true
                 d.CanTouch = true
-                d.CanCollide = true
             end
         end
         local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp and savedPlayerCF then
-            -- Volver a basePos (que puede haber cambiado si usaste speed)
-            hrp.CFrame = CFrame.new(basePos) * savedPlayerCF.Rotation
+        if hrp and homeCenter then
+            hrp.CFrame = CFrame.new(homeCenter) * (savedPlayerCF and savedPlayerCF.Rotation or hrp.CFrame.Rotation)
         end
     end
     savedWalkSpeed = nil
@@ -393,27 +348,29 @@ local function stopSpirit()
 
     reattachHandle()
     cachedBat = nil
-    spiritPos = nil
+    homeCenter = nil
+    attackCenter = nil
 end
 
--- ================== SPEED (6 studs) ==================
+-- ================== SPEED (8 studs) ==================
 local function doSpeed()
     local now = tick()
     if now - lastSpeedTime < CONFIG.SpeedCooldown then return end
     lastSpeedTime = now
 
+    local char = player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local forward = camera.CFrame.LookVector
+    local newPos  = hrp.Position + forward * CONFIG.SpeedDistance
+
     if spiritActive then
-        -- Con espíritu activo: mueve basePos (ancla del clon). 
-        -- El personaje real está a salvo arriba, no se toca.
-        local forward = camera.CFrame.LookVector
-        basePos = basePos + forward * CONFIG.SpeedDistance
-        updateSpiritPosition(basePos + Vector3.new(0, 2, 0))
+        hrp.CFrame = CFrame.new(newPos) * hrp.CFrame.Rotation
+        homeCenter = newPos
     else
-        local char = player.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        hrp.CFrame = CFrame.new(hrp.Position + camera.CFrame.LookVector * CONFIG.SpeedDistance) * hrp.CFrame.Rotation
+        hrp.CFrame = CFrame.new(newPos) * hrp.CFrame.Rotation
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then hum:ChangeState(Enum.HumanoidStateType.Freefall) end
     end
