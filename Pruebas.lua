@@ -1,5 +1,5 @@
 --[[
-    LocalScript: SpiritControlGUI v3
+    LocalScript: SpiritControlGUI v5
     Ubicación: StarterPlayer > StarterPlayerScripts
 ]]
 
@@ -13,23 +13,29 @@ local camera    = workspace.CurrentCamera
 
 -- ================== CONFIG ==================
 local CONFIG = {
-    ButtonSize        = 60,       -- un poco más pequeños
+    ButtonSize        = 60,
     ButtonSeparation  = 15,
     DragPadding       = 40,
-    TapThreshold      = 12,
+    TapThreshold      = 10,
     LockSize          = 18,
 
-    SpiritRadius       = 15,      -- círculo de 15 studs alrededor del personaje
-    SpiritStepInterval = 0.02,    -- super rápido (~50 Hz)
-    SpiritStepSize     = 6,
+    SpiritRadius       = 15,
+    SpiritStepInterval = 0.10,   -- ⬇️ velocidad del espíritu bajada
+    SpiritStepSize     = 5,
 
     AttackDetectRadius = 15,
     AttackCooldown     = 0.3,
 
-    SpeedDistance  = 3,           -- 3 studs adelante
+    SpeedDistance  = 6,          -- 6 studs hacia adelante
     SpeedCooldown  = 0.15,
 
-    BatAIName        = "BatAI",   -- <-- cambia al nombre real de tu bot
+    -- ==== SEÑUELO / NO PODER SER GOLPEADO ====
+    PlayerSafeHeight       = 400,   -- studs arriba (pon 0 para desactivar)
+    EnemyChaseRadius       = 40,
+    EnemyChaseLerp         = 0.3,
+    EnemyWeaponChase       = true,  -- redirigir armas enemigas al clon
+
+    BatAIName        = "BatAI",     -- <-- cambia al nombre real de tu bot
     BrainrotToolName = nil,
 }
 
@@ -40,6 +46,9 @@ local spiritConn      = nil
 local basePos         = nil
 local spiritPos       = nil
 local savedWelds      = {}
+local savedWalkSpeed  = nil
+local savedJumpPower  = nil
+local savedPlayerCF   = nil
 local lastSpeedTime   = -math.huge
 local lastStepTime    = 0
 local lastAttackTime  = -math.huge
@@ -84,7 +93,6 @@ local function setCharacterVisibility(visible)
     if not char then return end
     for _, d in ipairs(char:GetDescendants()) do
         if d:IsA("BasePart") then
-            -- No ocultar el handle del brainrot para verlo teletransportarse
             local isToolPart = d:FindFirstAncestorOfClass("Tool") ~= nil
             if not isToolPart then
                 d.LocalTransparencyModifier = visible and 0 or 1
@@ -125,6 +133,8 @@ local function findNearestAttacker()
     if not char then return nil end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
+    -- Usamos basePos (posición "real" del jugador en el mapa, no la de seguridad)
+    local refPos = basePos or hrp.Position
     local nearest, nearestDist = nil, CONFIG.AttackDetectRadius
     for _, other in ipairs(Players:GetPlayers()) do
         if other ~= player then
@@ -133,7 +143,7 @@ local function findNearestAttacker()
                 local ohrp = oc:FindFirstChild("HumanoidRootPart")
                 local ohum = oc:FindFirstChildOfClass("Humanoid")
                 if ohrp and ohum and ohum.Health > 0 then
-                    local d = (ohrp.Position - hrp.Position).Magnitude
+                    local d = (ohrp.Position - refPos).Magnitude
                     if d <= nearestDist then
                         nearest, nearestDist = oc, d
                     end
@@ -151,6 +161,9 @@ local function createSpiritClone()
     local clone = char:Clone()
     clone.Name = "LocalSpiritClone"
 
+    local root = clone:FindFirstChild("HumanoidRootPart")
+    if root then clone.PrimaryPart = root end
+
     for _, d in ipairs(clone:GetDescendants()) do
         if d:IsA("BasePart") then
             d.Anchored = true
@@ -166,6 +179,7 @@ local function createSpiritClone()
             d.HealthDisplayType   = Enum.HumanoidHealthDisplayType.AlwaysOff
             d.WalkSpeed = 0
             d.JumpPower = 0
+            d.AutoRotate = false
         end
     end
 
@@ -178,14 +192,13 @@ local function updateSpiritPosition(targetPos)
 
     if spiritClone then
         local root = spiritClone:FindFirstChild("HumanoidRootPart")
-                   or spiritClone:FindFirstChild("Head")
+                   or spiritClone.PrimaryPart
                    or spiritClone:FindFirstChildWhichIsA("BasePart")
         if root then
             spiritClone:PivotTo(CFrame.new(targetPos))
         end
     end
 
-    -- El brainrot (herramienta en la mano) viaja con el espíritu
     local char = player.Character
     if char then
         local t = findBrainrotTool(char)
@@ -205,6 +218,30 @@ local function updateSpiritPosition(targetPos)
     end
 end
 
+-- Redirige visualmente las armas de enemigos cercanos hacia el clon
+local function redirectEnemyWeapons()
+    if not CONFIG.EnemyWeaponChase or not spiritPos then return end
+    for _, other in ipairs(Players:GetPlayers()) do
+        if other ~= player then
+            local oc = other.Character
+            if oc then
+                local ohrp = oc:FindFirstChild("HumanoidRootPart")
+                if ohrp and (ohrp.Position - (basePos or spiritPos)).Magnitude <= CONFIG.EnemyChaseRadius then
+                    for _, d in ipairs(oc:GetDescendants()) do
+                        if d:IsA("Tool") then
+                            local h = d:FindFirstChild("Handle")
+                            if h and h:IsA("BasePart") then
+                                local target = CFrame.new(spiritPos + Vector3.new(0, 1.5, 0))
+                                h.CFrame = h.CFrame:Lerp(target, CONFIG.EnemyChaseLerp)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 local function startSpirit()
     if spiritActive then return end
     local char = player.Character
@@ -216,19 +253,43 @@ local function startSpirit()
     basePos      = hrp.Position
     spiritPos    = basePos + Vector3.new(0, 2, 0)
     lastStepTime = 0
+    savedPlayerCF = hrp.CFrame
 
-    -- 1) Clonar personaje ANTES de volverlo invisible
+    -- 1) Clonar personaje (queda en la posición original)
     spiritClone = createSpiritClone()
 
-    -- 2) Volver invisible al personaje original (solo para ti)
+    -- 2) Congelar humanoide
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        savedWalkSpeed = hum.WalkSpeed
+        savedJumpPower = hum.JumpPower
+        hum.WalkSpeed  = 0
+        hum.JumpPower  = 0
+        hum.PlatformStand = true
+    end
+
+    -- 3) Invisible
     setCharacterVisibility(false)
 
-    -- 3) Desoldar el brainrot de la mano
+    -- 4) Desoldar brainrot
     local tool   = findBrainrotTool(char)
     local handle = tool and tool:FindFirstChild("Handle")
     if handle and handle:IsA("BasePart") then
         detachHandle(handle)
         handle.LocalTransparencyModifier = 0
+    end
+
+    -- 5) Teletransportar el personaje real a zona segura (NO el clon)
+    if CONFIG.PlayerSafeHeight > 0 then
+        hrp.CFrame = CFrame.new(savedPlayerCF.Position + Vector3.new(0, CONFIG.PlayerSafeHeight, 0)) * savedPlayerCF.Rotation
+        -- Desactivar hitbox local
+        for _, d in ipairs(char:GetDescendants()) do
+            if d:IsA("BasePart") then
+                d.CanQuery = false
+                d.CanTouch = false
+                d.CanCollide = false
+            end
+        end
     end
 
     cachedBat     = findBat()
@@ -253,7 +314,7 @@ local function startSpirit()
             end
         end
 
-        -- B) Sin enemigo -> pasitos super rápidos dentro del círculo de 15 studs
+        -- B) Sin enemigo -> pasitos dentro del círculo
         if not targetPos and now - lastStepTime >= CONFIG.SpiritStepInterval then
             lastStepTime = now
             local currentPos = spiritPos or basePos
@@ -279,7 +340,7 @@ local function startSpirit()
             updateSpiritPosition(targetPos)
         end
 
-        -- C) Bat persiguiendo al espíritu
+        -- C) Bat propio persiguiendo al clon
         if not cachedBat or not cachedBat.Parent or now > nextBatSearch then
             cachedBat = findBat()
             nextBatSearch = now + 0.5
@@ -291,6 +352,9 @@ local function startSpirit()
                 bp.CFrame = bp.CFrame:Lerp(targetCF, 0.4)
             end
         end
+
+        -- D) Señuelo: armas de enemigos cercanos se redirigen al clon
+        redirectEnemyWeapons()
     end)
 end
 
@@ -300,27 +364,56 @@ local function stopSpirit()
     if spiritConn then spiritConn:Disconnect(); spiritConn = nil end
     if spiritClone then spiritClone:Destroy(); spiritClone = nil end
     setCharacterVisibility(true)
+
+    local char = player.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.PlatformStand = false
+            hum.WalkSpeed = savedWalkSpeed or 16
+            hum.JumpPower = savedJumpPower or 50
+        end
+        -- Restaurar hitbox y posición
+        for _, d in ipairs(char:GetDescendants()) do
+            if d:IsA("BasePart") then
+                d.CanQuery = true
+                d.CanTouch = true
+                d.CanCollide = true
+            end
+        end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp and savedPlayerCF then
+            -- Volver a basePos (que puede haber cambiado si usaste speed)
+            hrp.CFrame = CFrame.new(basePos) * savedPlayerCF.Rotation
+        end
+    end
+    savedWalkSpeed = nil
+    savedJumpPower = nil
+    savedPlayerCF  = nil
+
     reattachHandle()
     cachedBat = nil
     spiritPos = nil
 end
 
--- ================== SPEED (3 studs) ==================
+-- ================== SPEED (6 studs) ==================
 local function doSpeed()
     local now = tick()
     if now - lastSpeedTime < CONFIG.SpeedCooldown then return end
     lastSpeedTime = now
 
     if spiritActive then
+        -- Con espíritu activo: mueve basePos (ancla del clon). 
+        -- El personaje real está a salvo arriba, no se toca.
         local forward = camera.CFrame.LookVector
         basePos = basePos + forward * CONFIG.SpeedDistance
-        updateSpiritPosition((spiritPos or basePos) + forward * CONFIG.SpeedDistance)
+        updateSpiritPosition(basePos + Vector3.new(0, 2, 0))
     else
         local char = player.Character
         if not char then return end
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
-        hrp.CFrame = CFrame.new(hrp.Position + hrp.CFrame.LookVector * CONFIG.SpeedDistance) * hrp.CFrame.Rotation
+        hrp.CFrame = CFrame.new(hrp.Position + camera.CFrame.LookVector * CONFIG.SpeedDistance) * hrp.CFrame.Rotation
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then hum:ChangeState(Enum.HumanoidStateType.Freefall) end
     end
@@ -351,7 +444,7 @@ local function createButton(text, offsetX)
     btn.AutoButtonColor = false
     btn.ZIndex          = 50
     styleButton(btn)
-    btn.Parent          = gui
+    btn.Parent = gui
 
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 8)
@@ -364,12 +457,11 @@ local function createButton(text, offsetX)
     pad.PaddingBottom = UDim.new(0, 8)
     pad.Parent = btn
 
-    -- === Botón "L" en la esquina superior derecha ===
     local lBtn = Instance.new("TextButton")
     lBtn.Name            = "LockL"
     lBtn.Size            = UDim2.fromOffset(CONFIG.LockSize, CONFIG.LockSize)
     lBtn.AnchorPoint     = Vector2.new(1, 0)
-    lBtn.Position        = UDim2.new(1, -2, 0, -2)  -- pegado al borde superior derecho
+    lBtn.Position        = UDim2.new(1, -2, 0, -2)
     lBtn.BackgroundColor3= Color3.fromRGB(220, 220, 220)
     lBtn.BorderSizePixel = 0
     lBtn.Text            = "L"
@@ -401,7 +493,6 @@ end
 local btnFalse = createButton("false", 30)
 local btnSpeed = createButton("speed", 30 + CONFIG.ButtonSize + CONFIG.ButtonSeparation)
 
--- ================== TOGGLE / FLASH ==================
 local function toggleSpirit()
     if spiritActive then
         stopSpirit()
@@ -421,7 +512,7 @@ local function flashSpeed()
     end)
 end
 
--- ================== DRAG MULTITÁCTIL + LOCK ==================
+-- ================== DRAG + LOCK ==================
 local function clampPos(frame, pos)
     local vp = camera.ViewportSize
     local sz = frame.AbsoluteSize
@@ -443,11 +534,8 @@ local function makeDraggable(frame)
         if input.UserInputType ~= Enum.UserInputType.MouseButton1
         and input.UserInputType ~= Enum.UserInputType.Touch then return end
 
-        -- ¿Tocó la L? -> dejar que el handler de L actúe, no arrastrar
         local lBtn = frame:FindFirstChild("LockL")
         if lBtn and isOverGui(lBtn, input.Position) then return end
-
-        -- ¿Botón bloqueado? -> no arrastrar
         if frame:GetAttribute("Locked") then return end
 
         activeDrags[input] = {
@@ -502,7 +590,6 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- ================== RESPAWN ==================
 player.CharacterAdded:Connect(function()
     if spiritActive then
         stopSpirit()
