@@ -1,128 +1,256 @@
 --=============================================================
---  LocalScript  →  StarterPlayer > StarterPlayerScripts
---  Botón "speed": arrastrable + teletransporte 4x8 studs
+--  BOTÓN "SPEED" ARRASTRABLE + TELETRANSPORTE
+--  LocalScript → StarterPlayer > StarterPlayerScripts
 --=============================================================
-local Players           = game:GetService("Players")
-local UserInputService  = game:GetService("UserInputService")
-local TweenService      = game:GetService("TweenService")
 
-local player    = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
 
 --==================== CONFIGURACIÓN ==========================
-local BUTTON_SIZE   = 110    -- tamaño del cuadrado (px)
-local STUDS_PER_STEP = 8     -- "8 pies" por salto (studs)
-local STEPS          = 4     -- cantidad de saltos
-local STEP_DELAY     = 0.15  -- pausa entre saltos (seg)
---=============================================================
+local CONFIG = {
+	PIES_POR_SALTO  = 8,      -- pies que avanza por toque
+	STUDS_POR_PIE   = 0.93,   -- 1 pie ≈ 0.93 studs (pon 1 si usas 1 stud = 1 pie)
+	USOS_POR_CARGA  = 4,      -- toques antes de desactivarse
+	TIEMPO_RECARGA  = 1.5,    -- segundos desactivado
+	TAMANO_BOTON    = 120,    -- tamaño del cuadrado en píxeles
+	TAMANO_L        = 30,     -- tamaño de la "L"
+	UMBRAL_ARRASTRE = 12,     -- píxeles de movimiento para contar como arrastre
+}
+
+local DISTANCIA = CONFIG.PIES_POR_SALTO * CONFIG.STUDS_POR_PIE
+
+--==================== COLORES ================================
+local COLOR = {
+	fondoNormal   = Color3.fromRGB(0, 0, 0),
+	textoNormal   = Color3.fromRGB(255, 255, 255),
+	fondoPresion  = Color3.fromRGB(255, 255, 255),
+	textoPresion  = Color3.fromRGB(0, 0, 0),
+	fondoInactivo = Color3.fromRGB(55, 55, 55),
+	textoInactivo = Color3.fromRGB(150, 150, 150),
+	L_libre       = Color3.fromRGB(40, 170, 80),
+	L_bloqueado   = Color3.fromRGB(200, 55, 55),
+}
+
+--==================== ESTADO =================================
+local estado = {
+	centro     = Vector2.new(0, 0),
+	usos       = CONFIG.USOS_POR_CARGA,
+	recargando = false,
+	bloqueado  = false,   -- controlado por la "L"
+	arrastrando = false,
+	recorrido  = 0,
+	presionado = false,
+}
 
 --==================== INTERFAZ ===============================
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name            = "SpeedButtonGui"
-screenGui.ResetOnSpawn    = false
-screenGui.IgnoreGuiInset  = true
-screenGui.DisplayOrder    = 999
-screenGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
-screenGui.Parent          = playerGui
+screenGui.Name = "SpeedButtonGui"
+screenGui.IgnoreGuiInset = true
+screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 100
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
-local button = Instance.new("TextButton")
-button.Name             = "SpeedButton"
-button.Size             = UDim2.fromOffset(BUTTON_SIZE, BUTTON_SIZE)
-button.AnchorPoint      = Vector2.new(0, 0)
-button.BackgroundColor3 = Color3.new(0, 0, 0)
-button.BorderSizePixel  = 0
-button.Text             = "speed"
-button.TextColor3       = Color3.new(1, 1, 1)
-button.TextScaled       = true
-button.Font             = Enum.Font.GothamBold
-button.AutoButtonColor  = false
-button.Active           = true
-button.Parent           = screenGui
+-- Botón principal
+local boton = Instance.new("TextButton")
+boton.Name = "SpeedButton"
+boton.AnchorPoint = Vector2.new(0.5, 0.5)
+boton.Position = UDim2.fromScale(0.5, 0.5)
+boton.Size = UDim2.fromOffset(CONFIG.TAMANO_BOTON, CONFIG.TAMANO_BOTON)
+boton.BackgroundColor3 = COLOR.fondoNormal
+boton.BorderSizePixel = 0
+boton.AutoButtonColor = false
+boton.Text = "SPEED"
+boton.TextColor3 = COLOR.textoNormal
+boton.Font = Enum.Font.GothamBold
+boton.TextScaled = true
+boton.ZIndex = 2
+boton.Parent = screenGui
 
--- Centrar el botón al iniciar
-local function centerButton()
-    local vp = workspace.CurrentCamera.ViewportSize
-    button.Position = UDim2.fromOffset(
-        (vp.X - BUTTON_SIZE) / 2,
-        (vp.Y - BUTTON_SIZE) / 2
-    )
+local borde = Instance.new("UIStroke")
+borde.Color = Color3.fromRGB(255, 255, 255)
+borde.Thickness = 2
+borde.Transparency = 0.55
+borde.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+borde.Parent = boton
+
+-- Botón "L" (arriba a la derecha)
+local botonL = Instance.new("TextButton")
+botonL.Name = "LockButton"
+botonL.AnchorPoint = Vector2.new(0, 0)
+botonL.Size = UDim2.fromOffset(CONFIG.TAMANO_L, CONFIG.TAMANO_L)
+botonL.BackgroundColor3 = COLOR.L_libre
+botonL.BorderSizePixel = 0
+botonL.AutoButtonColor = false
+botonL.Text = "L"
+botonL.TextColor3 = Color3.fromRGB(255, 255, 255)
+botonL.Font = Enum.Font.GothamBold
+botonL.TextScaled = true
+botonL.ZIndex = 3
+botonL.Parent = screenGui
+
+local bordeL = borde:Clone()
+bordeL.Transparency = 0.3
+bordeL.Parent = botonL
+
+--==================== UTILIDADES =============================
+local function tamanoPantalla()
+	local cam = Workspace.CurrentCamera
+	if cam then return cam.ViewportSize end
+	return Vector2.new(1280, 720)
 end
-centerButton()
 
---==================== ARRASTRAR ==============================
-local dragInput, dragStart, startX, startY, moved
+-- Coloca la "L" pegada a la esquina superior derecha del botón
+local function posicionarL()
+	local p = boton.Position
+	local mitad = CONFIG.TAMANO_BOTON / 2
+	local mL = CONFIG.TAMANO_L / 2
+	botonL.Position = UDim2.new(
+		p.X.Scale, p.X.Offset + mitad - mL,
+		p.Y.Scale, p.Y.Offset - mitad - mL
+	)
+end
 
-button.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-        dragStart = input.Position
-        startX    = button.Position.X.Offset
-        startY    = button.Position.Y.Offset
-        moved     = false
-    end
-end)
+-- Mueve el botón (y la L) manteniéndolo dentro de la pantalla
+local function fijarCentro(nuevoCentro)
+	local vp = tamanoPantalla()
+	local mitad = CONFIG.TAMANO_BOTON / 2
+	estado.centro = Vector2.new(
+		math.clamp(nuevoCentro.X, mitad, math.max(mitad, vp.X - mitad)),
+		math.clamp(nuevoCentro.Y, mitad, math.max(mitad, vp.Y - mitad))
+	)
+	boton.Position = UDim2.fromOffset(estado.centro.X, estado.centro.Y)
+	posicionarL()
+end
 
-UserInputService.InputChanged:Connect(function(input)
-    if input ~= dragInput then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseMovement
-    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+local function aplicarVisual()
+	if estado.presionado then
+		boton.BackgroundColor3 = COLOR.fondoPresion
+		boton.TextColor3 = COLOR.textoPresion
+	elseif estado.recargando or estado.usos <= 0 then
+		boton.BackgroundColor3 = COLOR.fondoInactivo
+		boton.TextColor3 = COLOR.textoInactivo
+	else
+		boton.BackgroundColor3 = COLOR.fondoNormal
+		boton.TextColor3 = COLOR.textoNormal
+	end
+end
 
-    local delta = input.Position - dragStart
-    if delta.Magnitude > 10 then moved = true end
+local function esEntradaValida(input)
+	return input.UserInputType == Enum.UserInputType.Touch
+		or input.UserInputType == Enum.UserInputType.MouseButton1
+end
 
-    local vp  = workspace.CurrentCamera.ViewportSize
-    local newX = math.clamp(startX + delta.X, 0, vp.X - BUTTON_SIZE)
-    local newY = math.clamp(startY + delta.Y, 0, vp.Y - BUTTON_SIZE)
-
-    button.Position = UDim2.fromOffset(newX, newY)
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input ~= dragInput then return end
-    dragInput = nil
-    if not moved then          -- fue un toque, no un arrastre
-        activate()
-    end
-end)
+-- Evita que tocar la "L" active el botón principal
+local function puntaEnBotonL(input)
+	local p = botonL.AbsolutePosition
+	local s = botonL.AbsoluteSize
+	local pos = input.Position
+	return pos.X >= p.X and pos.X <= p.X + s.X
+		and pos.Y >= p.Y and pos.Y <= p.Y + s.Y
+end
 
 --==================== TELETRANSPORTE =========================
-local function teleportForward()
-    local character = player.Character
-    if not character then return end
+local function teletransportar()
+	local personaje = player.Character
+	if not personaje then return false end
 
-    for i = 1, STEPS do
-        character = player.Character
-        if not character then break end
+	local hrp = personaje:FindFirstChild("HumanoidRootPart")
+	local humanoide = personaje:FindFirstChildOfClass("Humanoid")
+	if not hrp or not humanoide or humanoide.Health <= 0 then return false end
 
-        local root = character:FindFirstChild("HumanoidRootPart")
-        if not root then break end
+	-- Dirección "hacia adelante" del personaje (plano horizontal)
+	local dir = hrp.CFrame.LookVector
+	dir = Vector3.new(dir.X, 0, dir.Z)
+	if dir.Magnitude < 0.01 then
+		dir = Vector3.new(0, 0, -1)
+	end
+	dir = dir.Unit
 
-        -- Avanza 8 studs hacia donde mira el personaje
-        character:PivotTo(character:GetPivot() * CFrame.new(0, 0, -STUDS_PER_STEP))
-
-        task.wait(STEP_DELAY)
-    end
+	hrp.CFrame = hrp.CFrame + dir * DISTANCIA
+	return true
 end
 
---==================== ACTIVAR / DESACTIVAR ===================
-local used = false
+local function usarBoton()
+	if estado.recargando or estado.usos <= 0 then return end
+	if not teletransportar() then return end
 
-function activate()
-    if used then return end
-    used = true
+	estado.usos -= 1
+	aplicarVisual()
 
-    -- 1) Se pone blanco completo
-    TweenService:Create(button, TweenInfo.new(0.15), {
-        BackgroundColor3 = Color3.new(1, 1, 1),
-        TextColor3       = Color3.new(1, 1, 1),
-    }):Play()
+	if estado.usos <= 0 then
+		estado.recargando = true
+		aplicarVisual()
+		task.delay(CONFIG.TIEMPO_RECARGA, function()
+			estado.usos = CONFIG.USOS_POR_CARGA
+			estado.recargando = false
+			aplicarVisual()
+		end)
+	end
+end
 
-    -- 2) Se desactiva (no se puede volver a tocar ni arrastrar)
-    button.Active        = false
-    button.AutoButtonColor = false
-    dragInput            = nil
+--==================== ENTRADA DEL BOTÓN ======================
+boton.InputBegan:Connect(function(input)
+	if not esEntradaValida(input) then return end
+	if puntaEnBotonL(input) then return end
 
-    -- 3) Teletransporte
-    teleportForward()
+	estado.arrastrando = true
+	estado.recorrido = 0
+	estado.presionado = true
+	aplicarVisual()
+end)
+
+boton.InputChanged:Connect(function(input)
+	if not estado.arrastrando then return end
+	if input.UserInputType ~= Enum.UserInputType.Touch
+		and input.UserInputType ~= Enum.UserInputType.MouseMovement then
+		return
+	end
+
+	local d = input.Delta
+	estado.recorrido += d.Magnitude
+
+	if estado.recorrido > CONFIG.UMBRAL_ARRASTRE and not estado.bloqueado then
+		fijarCentro(estado.centro + Vector2.new(d.X, d.Y))
+	end
+end)
+
+boton.InputEnded:Connect(function(input)
+	if not esEntradaValida(input) then return end
+	if not estado.arrastrando then return end
+
+	estado.arrastrando = false
+	local fueToque = estado.recorrido <= CONFIG.UMBRAL_ARRASTRE
+	estado.presionado = false
+	aplicarVisual()
+
+	if fueToque then
+		usarBoton()
+	end
+end)
+
+--==================== BOTÓN "L" (BLOQUEO) ====================
+botonL.InputBegan:Connect(function(input)
+	if not esEntradaValida(input) then return end
+
+	estado.bloqueado = not estado.bloqueado
+
+	if estado.bloqueado then
+		botonL.BackgroundColor3 = COLOR.L_bloqueado
+	else
+		botonL.BackgroundColor3 = COLOR.L_libre
+	end
+end)
+
+--==================== INICIO =================================
+fijarCentro(tamanoPantalla() / 2)
+aplicarVisual()
+
+-- Reposicionar si gira la pantalla o cambia el tamaño
+local cam = Workspace.CurrentCamera
+if cam then
+	cam:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+		fijarCentro(estado.centro)
+	end)
 end
