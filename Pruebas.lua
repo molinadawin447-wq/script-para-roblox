@@ -10,9 +10,9 @@ local player = Players.LocalPlayer
 
 --==================== CONFIGURACIÓN ==========================
 local CONFIG = {
-	PIES_POR_SALTO  = 12,     -- pies que avanza por toque
+	PIES_POR_SALTO  = 5,      -- pies que avanza por toque
 	STUDS_POR_PIE   = 0.93,   -- 1 pie ≈ 0.93 studs (pon 1 si usas 1 stud = 1 pie)
-	TAMANO_BOTON    = 70,     -- tamaño del cuadrado en píxeles (más pequeño)
+	TAMANO_BOTON    = 70,     -- tamaño del cuadrado en píxeles
 	TAMANO_L        = 20,     -- tamaño de la "L"
 	UMBRAL_ARRASTRE = 12,     -- píxeles de movimiento para contar como arrastre
 }
@@ -32,7 +32,7 @@ local COLOR = {
 --==================== ESTADO =================================
 local estado = {
 	centro      = Vector2.new(0, 0),
-	bloqueado   = false,   -- controlado por la "L"
+	bloqueado   = false,
 	arrastrando = false,
 	recorrido   = 0,
 	presionado  = false,
@@ -95,7 +95,6 @@ local function tamanoPantalla()
 	return Vector2.new(1280, 720)
 end
 
--- Coloca la "L" pegada a la esquina superior derecha del botón
 local function posicionarL()
 	local p = boton.Position
 	local mitad = CONFIG.TAMANO_BOTON / 2
@@ -106,7 +105,6 @@ local function posicionarL()
 	)
 end
 
--- Mueve el botón (y la L) manteniéndolo dentro de la pantalla
 local function fijarCentro(nuevoCentro)
 	local vp = tamanoPantalla()
 	local mitad = CONFIG.TAMANO_BOTON / 2
@@ -133,7 +131,6 @@ local function esEntradaValida(input)
 		or input.UserInputType == Enum.UserInputType.MouseButton1
 end
 
--- Evita que tocar la "L" active el botón principal
 local function puntaEnBotonL(input)
 	local p = botonL.AbsolutePosition
 	local s = botonL.AbsoluteSize
@@ -151,7 +148,6 @@ local function teletransportar()
 	local humanoide = personaje:FindFirstChildOfClass("Humanoid")
 	if not hrp or not humanoide or humanoide.Health <= 0 then return false end
 
-	-- Dirección "hacia adelante" del personaje (plano horizontal)
 	local dir = hrp.CFrame.LookVector
 	dir = Vector3.new(dir.X, 0, dir.Z)
 	if dir.Magnitude < 0.01 then
@@ -224,7 +220,6 @@ end)
 fijarCentro(tamanoPantalla() / 2)
 aplicarVisual()
 
--- Reposicionar si gira la pantalla o cambia el tamaño
 local cam = Workspace.CurrentCamera
 if cam then
 	cam:GetPropertyChangedSignal("ViewportSize"):Connect(function()
