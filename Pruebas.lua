@@ -10,7 +10,7 @@ local player = Players.LocalPlayer
 
 --==================== CONFIGURACIÓN ==========================
 local CONFIG = {
-	PIES_POR_SALTO  = 5,      -- pies que avanza por toque
+	PIES_POR_SALTO  = 2,      -- pies que avanza por toque
 	STUDS_POR_PIE   = 0.93,   -- 1 pie ≈ 0.93 studs (pon 1 si usas 1 stud = 1 pie)
 	TAMANO_BOTON    = 70,     -- tamaño del cuadrado en píxeles
 	TAMANO_L        = 20,     -- tamaño de la "L"
