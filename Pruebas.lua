@@ -1,588 +1,187 @@
---[[
-    LocalScript: SpiritControlGUI v8
-    Ubicación: StarterPlayer > StarterPlayerScripts
-]]
+--[[ ============================================================
+     BOTÓN "LAG" — Script LOCAL
+     Ubicación: StarterPlayer > StarterPlayerScripts
+     ------------------------------------------------------------
+     • Botón pequeño negro con letra blanca "lag"
+     • Al activarlo: tu personaje se vuelve invisible y aparece
+       un clon con tu mismo vestuario moviéndose súper rápido
+       (teleportes erráticos = efecto lag). El botón se pone morado.
+     • Al volver a tocarlo: todo se desactiva y el botón vuelve a negro.
+     ============================================================ ]]
 
-local Players          = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService       = game:GetService("RunService")
+local Players    = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local player    = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local camera    = workspace.CurrentCamera
 
--- ================== CONFIG ==================
-local CONFIG = {
-    ButtonSize        = 60,
-    ButtonSeparation  = 15,
-    DragPadding       = 40,
-    TapThreshold      = 15,     -- ⬆️ más permisivo: taps en móvil no se cancelan
-    LockSize          = 18,
+-- ================== INTERFAZ (GUI) ==================
+local gui = Instance.new("ScreenGui")
+gui.Name           = "LagGui"
+gui.ResetOnSpawn   = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent         = playerGui
 
-    CloneCount        = 3,
-    TeleportInterval  = 0.04,
-    CloneRadius       = 12,
-    CloneHeightMin    = -2,
-    CloneHeightMax    = 8,
+local boton = Instance.new("TextButton")
+boton.Name             = "BotonLag"
+boton.Size             = UDim2.new(0, 60, 0, 28)   -- botón pequeño
+boton.Position         = UDim2.new(0, 16, 0, 16)
+boton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)    -- negro
+boton.TextColor3       = Color3.fromRGB(255, 255, 255) -- letras blancas
+boton.Text             = "lag"
+boton.Font             = Enum.Font.SourceSansBold
+boton.TextSize         = 16
+boton.BorderSizePixel  = 0
+boton.AutoButtonColor  = false
+boton.Parent           = gui
 
-    AttackDetectRadius = 15,
-    AttackCooldown     = 0.6,
-    AttackDuration     = 0.35,
-
-    SpeedDistance = 8,
-    SpeedCooldown = 0.15,
-
-    BatAIName        = "BatAI",
-    BrainrotToolName = nil,
-}
+local COLOR_NORMAL = Color3.fromRGB(0, 0, 0)
+local COLOR_ACTIVO = Color3.fromRGB(128, 0, 128)     -- morado
 
 -- ================== ESTADO ==================
-local spiritActive    = false
-local clones          = {}
-local cloneNextJump   = {}
-local spiritConn      = nil
-local homeCenter      = nil
-local attackCenter    = nil
-local attackUntil     = 0
-local savedWelds      = {}
-local savedWalkSpeed  = nil
-local savedJumpPower  = nil
-local savedPlayerCF   = nil
-local lastSpeedTime   = -math.huge
-local lastAttackTime  = -math.huge
-local cachedBat       = nil
-local nextBatSearch   = 0
-local activeDrags     = {}
+local activo         = false
+local clon           = nil
+local conexionMov    = nil
+local transparencias = {}  -- guarda [parte] = transparencia original
 
-local raycastParams = RaycastParams.new()
-raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+-- ================== FUNCIONES ==================
 
--- ================== HELPERS ==================
-local function findBrainrotTool(char)
-    if not char then return nil end
-    if CONFIG.BrainrotToolName then
-        return char:FindFirstChild(CONFIG.BrainrotToolName)
-    end
-    return char:FindFirstChildOfClass("Tool")
+-- Devuelve la transparencia original de tu personaje
+local function restaurarPersonaje()
+	local char = player.Character
+	if not char then return end
+	for parte, valor in pairs(transparencias) do
+		if parte and parte.Parent then
+			parte.Transparency = valor
+		end
+	end
+	transparencias = {}
 end
 
-local function findBat()
-    local char = player.Character
-    if char then
-        local b = char:FindFirstChild(CONFIG.BatAIName)
-        if b then return b end
-    end
-    return workspace:FindFirstChild(CONFIG.BatAIName, true)
+-- Vuelve invisible a tu personaje (solo en tu pantalla)
+local function ocultarPersonaje()
+	local char = player.Character
+	if not char then return end
+	transparencias = {}
+	for _, obj in ipairs(char:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			transparencias[obj] = obj.Transparency
+			obj.Transparency = 1
+		elseif obj:IsA("Decal") or obj:IsA("Texture") then
+			transparencias[obj] = obj.Transparency
+			obj.Transparency = 1
+		end
+	end
 end
 
-local function getBatPart(bat)
-    if not bat then return nil end
-    if bat:IsA("BasePart") then return bat end
-    local p = bat:FindFirstChild("HumanoidRootPart") or bat:FindFirstChild("Head")
-    if p and p:IsA("BasePart") then return p end
-    for _, d in ipairs(bat:GetDescendants()) do
-        if d:IsA("BasePart") then return d end
-    end
-    return nil
+-- Crea el clon con tu mismo vestuario
+local function crearClon()
+	local char = player.Character
+	if not char then return nil, nil end
+
+	local copia = char:Clone()
+	copia.Name  = "ClonLag"
+
+	for _, obj in ipairs(copia:GetDescendants()) do
+		if obj:IsA("Script") or obj:IsA("LocalScript") then
+			obj:Destroy() -- quitar scripts para que no interfieran
+		elseif obj:IsA("BasePart") then
+			obj.CanCollide   = false
+			obj.Anchored     = false
+			obj.Transparency = 0 -- que se vea bien
+		end
+	end
+
+	local hum = copia:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.DisplayName  = "lag"
+		hum.PlatformStand = true
+	end
+
+	local root = copia:FindFirstChild("HumanoidRootPart")
+		or copia:FindFirstChildWhichIsA("BasePart")
+	if root then
+		root.Anchored   = true
+		root.CanCollide = false
+	end
+
+	copia.Parent = workspace
+	return copia, root
 end
 
-local function setCharacterVisibility(visible)
-    local char = player.Character
-    if not char then return end
-    for _, d in ipairs(char:GetDescendants()) do
-        if d:IsA("BasePart") then
-            local isToolPart = d:FindFirstAncestorOfClass("Tool") ~= nil
-            if not isToolPart then
-                d.LocalTransparencyModifier = visible and 0 or 1
-            end
-        end
-    end
+-- Movimiento errático y rapidísimo (efecto lag)
+local function iniciarMovimiento(clonObj, root)
+	conexionMov = RunService.Heartbeat:Connect(function()
+		if not (clonObj and clonObj.Parent and root and root.Parent) then
+			return
+		end
+
+		local char    = player.Character
+		local miRoot  = char and char:FindFirstChild("HumanoidRootPart")
+		local base    = miRoot and miRoot.CFrame or root.CFrame
+
+		-- saltos aleatorios cada frame → parece lag/glitch
+		local angulo = math.random() * math.pi * 2
+		local radio  = math.random(2, 12)
+		local altura = math.random(-2, 4)
+
+		local offset = Vector3.new(
+			math.cos(angulo) * radio,
+			altura,
+			math.sin(angulo) * radio
+		)
+
+		root.CFrame = base
+			* CFrame.new(offset)
+			* CFrame.Angles(0, math.random() * math.pi * 2, 0)
+	end)
 end
 
-local function detachHandle(handle)
-    savedWelds = {}
-    if not handle then return end
-    for _, j in ipairs(handle:GetJoints()) do
-        if j:IsA("JointInstance") then
-            savedWelds[j] = j.Enabled
-            j.Enabled = false
-        end
-    end
+-- Activar / Desactivar
+local function desactivar()
+	activo = false
+	boton.BackgroundColor3 = COLOR_NORMAL
+
+	if conexionMov then
+		conexionMov:Disconnect()
+		conexionMov = nil
+	end
+	if clon then
+		clon:Destroy()
+		clon = nil
+	end
+
+	restaurarPersonaje()
 end
 
-local function reattachHandle()
-    for j, s in pairs(savedWelds) do
-        if j and j.Parent then j.Enabled = s end
-    end
-    savedWelds = {}
+local function activar()
+	activo = true
+	boton.BackgroundColor3 = COLOR_ACTIVO
+
+	-- 1) Primero el clon (para que copie tu vestuario visible)
+	local c, root = crearClon()
+	if c and root then
+		clon = c
+		iniciarMovimiento(c, root)
+	end
+
+	-- 2) Luego te ocultas tú
+	ocultarPersonaje()
 end
 
-local function findNearestAttacker()
-    if not homeCenter then return nil end
-    local nearest, nearestDist = nil, CONFIG.AttackDetectRadius
-    for _, other in ipairs(Players:GetPlayers()) do
-        if other ~= player then
-            local oc = other.Character
-            if oc then
-                local ohrp = oc:FindFirstChild("HumanoidRootPart")
-                local ohum = oc:FindFirstChildOfClass("Humanoid")
-                if ohrp and ohum and ohum.Health > 0 then
-                    local d = (ohrp.Position - homeCenter).Magnitude
-                    if d <= nearestDist then
-                        nearest, nearestDist = oc, d
-                    end
-                end
-            end
-        end
-    end
-    return nearest
-end
-
--- ================== CLONES ==================
-local function createSpiritClone()
-    local char = player.Character
-    if not char then return nil end
-    local clone = char:Clone()
-    clone.Name = "LocalSpiritClone"
-
-    local root = clone:FindFirstChild("HumanoidRootPart")
-    if root then clone.PrimaryPart = root end
-
-    for _, d in ipairs(clone:GetDescendants()) do
-        if d:IsA("BasePart") then
-            d.Anchored = true
-            d.CanCollide = false
-            d.CanQuery = false
-            d.CanTouch = false
-            d.LocalTransparencyModifier = 0
-        elseif d:IsA("Script") or d:IsA("LocalScript")
-            or d:IsA("Tool") or d:IsA("ModuleScript") then
-            d:Destroy()
-        elseif d:IsA("Humanoid") then
-            d.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-            d.HealthDisplayType   = Enum.HumanoidHealthDisplayType.AlwaysOff
-            d.WalkSpeed = 0
-            d.JumpPower = 0
-            d.AutoRotate = false
-        end
-    end
-
-    clone.Parent = workspace
-    return clone
-end
-
-local function randomOrbitPos(center)
-    local theta = math.random() * math.pi * 2
-    local r     = math.sqrt(math.random()) * CONFIG.CloneRadius
-    local h     = CONFIG.CloneHeightMin + math.random() * (CONFIG.CloneHeightMax - CONFIG.CloneHeightMin)
-    return center + Vector3.new(math.cos(theta) * r, h, math.sin(theta) * r)
-end
-
-local function updateClones()
-    local now = tick()
-    local center = (now < attackUntil and attackCenter) or homeCenter
-    if not center then return end
-
-    for i, c in ipairs(clones) do
-        if c and c.Parent then
-            local nextJump = cloneNextJump[i] or 0
-            if now >= nextJump then
-                local pos = randomOrbitPos(center)
-                c:PivotTo(CFrame.new(pos))
-                local jitter = CONFIG.TeleportInterval * (0.6 + math.random() * 0.9)
-                cloneNextJump[i] = now + jitter
-            end
-        end
-    end
-
-    local char = player.Character
-    if char and clones[1] and clones[1].Parent then
-        local tool = findBrainrotTool(char)
-        if tool then
-            local h = tool:FindFirstChild("Handle")
-            if h and h:IsA("BasePart") then
-                for _, j in ipairs(h:GetJoints()) do
-                    if j:IsA("JointInstance") and j.Enabled then
-                        savedWelds[j] = true
-                        j.Enabled = false
-                    end
-                end
-                local c1root = clones[1]:FindFirstChild("HumanoidRootPart") or clones[1].PrimaryPart
-                if c1root then
-                    h.CFrame = c1root.CFrame + Vector3.new(0, 1.5, 0)
-                    h.LocalTransparencyModifier = 0
-                end
-            end
-        end
-    end
-end
-
--- ================== INICIO / FIN ==================
-local function startSpirit()
-    if spiritActive then return false end
-    local char = player.Character
-    if not char then return false end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-
-    -- Marcar como activo ANTES de cualquier operación costosa
-    spiritActive  = true
-    homeCenter    = hrp.Position
-    savedPlayerCF = hrp.CFrame
-    cloneNextJump = {}
-    clones        = {}
-
-    -- 1) Crear clones
-    for i = 1, CONFIG.CloneCount do
-        local c = createSpiritClone()
-        if c then
-            clones[#clones + 1] = c
-            cloneNextJump[#clones] = 0
-        end
-    end
-    if #clones == 0 then
-        -- Falló la creación → revertir
-        spiritActive = false
-        return false
-    end
-
-    -- 2) Congelar humanoide
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        savedWalkSpeed = hum.WalkSpeed
-        savedJumpPower = hum.JumpPower
-        hum.WalkSpeed  = 0
-        hum.JumpPower  = 0
-    end
-
-    -- 3) Invisible
-    setCharacterVisibility(false)
-
-    -- 4) Reducir interacción de hitbox
-    for _, d in ipairs(char:GetDescendants()) do
-        if d:IsA("BasePart") then
-            d.CanQuery = false
-            d.CanTouch = false
-        end
-    end
-
-    -- 5) Desoldar brainrot
-    local tool   = findBrainrotTool(char)
-    local handle = tool and tool:FindFirstChild("Handle")
-    if handle and handle:IsA("BasePart") then
-        detachHandle(handle)
-        handle.LocalTransparencyModifier = 0
-    end
-
-    cachedBat     = findBat()
-    nextBatSearch = tick() + 0.5
-
-    spiritConn = RunService.Heartbeat:Connect(function()
-        if not spiritActive then return end
-        local now = tick()
-
-        if now - lastAttackTime >= CONFIG.AttackCooldown then
-            local attacker = findNearestAttacker()
-            if attacker then
-                local ahrp = attacker:FindFirstChild("HumanoidRootPart")
-                if ahrp then
-                    attackCenter = ahrp.Position + Vector3.new(0, 2, 0)
-                    attackUntil  = now + CONFIG.AttackDuration
-                    lastAttackTime = now
-                end
-            end
-        end
-
-        updateClones()
-
-        if not cachedBat or not cachedBat.Parent or now > nextBatSearch then
-            cachedBat = findBat()
-            nextBatSearch = now + 0.5
-        end
-        if cachedBat and clones[1] and clones[1].Parent then
-            local bp = getBatPart(cachedBat)
-            local c1root = clones[1]:FindFirstChild("HumanoidRootPart") or clones[1].PrimaryPart
-            if bp and c1root then
-                bp.CFrame = bp.CFrame:Lerp(c1root.CFrame + Vector3.new(0, 2, 0), 0.4)
-            end
-        end
-    end)
-
-    return true
-end
-
-local function stopSpirit()
-    if not spiritActive then return end
-    spiritActive = false
-    if spiritConn then spiritConn:Disconnect(); spiritConn = nil end
-    for _, c in ipairs(clones) do
-        if c then c:Destroy() end
-    end
-    clones        = {}
-    cloneNextJump = {}
-    setCharacterVisibility(true)
-
-    local char = player.Character
-    if char then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum.WalkSpeed = savedWalkSpeed or 16
-            hum.JumpPower = savedJumpPower or 50
-        end
-        for _, d in ipairs(char:GetDescendants()) do
-            if d:IsA("BasePart") then
-                d.CanQuery = true
-                d.CanTouch = true
-            end
-        end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp and homeCenter then
-            hrp.CFrame = CFrame.new(homeCenter) * (savedPlayerCF and savedPlayerCF.Rotation or hrp.CFrame.Rotation)
-        end
-    end
-    savedWalkSpeed = nil
-    savedJumpPower = nil
-    savedPlayerCF  = nil
-
-    reattachHandle()
-    cachedBat = nil
-    homeCenter = nil
-    attackCenter = nil
-end
-
--- ================== SPEED ==================
-local function doSpeed()
-    local now = tick()
-    if now - lastSpeedTime < CONFIG.SpeedCooldown then return end
-    lastSpeedTime = now
-
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local forward = camera.CFrame.LookVector
-    local newPos  = hrp.Position + forward * CONFIG.SpeedDistance
-
-    if spiritActive then
-        hrp.CFrame = CFrame.new(newPos) * hrp.CFrame.Rotation
-        homeCenter = newPos
-    else
-        hrp.CFrame = CFrame.new(newPos) * hrp.CFrame.Rotation
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Freefall) end
-    end
-end
-
--- ================== GUI ==================
-local gui = Instance.new("ScreenGui")
-gui.Name             = "SpiritControlGUI"
-gui.ResetOnSpawn     = false
-gui.IgnoreGuiInset   = true
-gui.ZIndexBehavior   = Enum.ZIndexBehavior.Sibling
-gui.Parent           = playerGui
-
-local function styleNormal(btn)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)   -- blanco
-    btn.TextColor3       = Color3.fromRGB(0, 0, 0)          -- texto negro
-end
-
-local function styleActive(btn)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)          -- negro
-    btn.TextColor3       = Color3.fromRGB(255, 255, 255)    -- texto blanco
-end
-
-local function createButton(text, offsetX)
-    local btn = Instance.new("TextButton")
-    btn.Name            = "Btn_" .. text
-    btn.Size            = UDim2.fromOffset(CONFIG.ButtonSize, CONFIG.ButtonSize)
-    btn.Position        = UDim2.new(0, offsetX, 0.5, -CONFIG.ButtonSize / 2)
-    btn.BorderSizePixel = 0
-    btn.Text            = text
-    btn.Font            = Enum.Font.GothamBold
-    btn.TextScaled      = true
-    btn.AutoButtonColor = false
-    btn.ZIndex          = 50
-    styleNormal(btn)
-    btn.Parent = gui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = btn
-
-    local pad = Instance.new("UIPadding")
-    pad.PaddingLeft   = UDim.new(0, 8)
-    pad.PaddingRight  = UDim.new(0, 8)
-    pad.PaddingTop    = UDim.new(0, 8)
-    pad.PaddingBottom = UDim.new(0, 8)
-    pad.Parent = btn
-
-    -- Sub-botón "L" en la esquina superior derecha
-    local lBtn = Instance.new("TextButton")
-    lBtn.Name            = "LockL"
-    lBtn.Size            = UDim2.fromOffset(CONFIG.LockSize, CONFIG.LockSize)
-    lBtn.AnchorPoint     = Vector2.new(1, 0)
-    lBtn.Position        = UDim2.new(1, -2, 0, -2)
-    lBtn.BackgroundColor3= Color3.fromRGB(220, 220, 220)
-    lBtn.BorderSizePixel = 0
-    lBtn.Text            = "L"
-    lBtn.TextColor3      = Color3.fromRGB(0, 0, 0)
-    lBtn.Font            = Enum.Font.GothamBold
-    lBtn.TextScaled      = true
-    lBtn.AutoButtonColor = false
-    lBtn.ZIndex          = 60
-    lBtn.Parent          = btn
-
-    local lCorner = Instance.new("UICorner")
-    lCorner.CornerRadius = UDim.new(0, 5)
-    lCorner.Parent = lBtn
-
-    btn:SetAttribute("Locked", false)
-
-    lBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch
-        or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local locked = not (btn:GetAttribute("Locked") or false)
-            btn:SetAttribute("Locked", locked)
-            lBtn.BackgroundColor3 = locked and Color3.fromRGB(255, 90, 90) or Color3.fromRGB(220, 220, 220)
-        end
-    end)
-
-    return btn
-end
-
-local btnFalse = createButton("false", 30)
-local btnSpeed = createButton("speed", 30 + CONFIG.ButtonSize + CONFIG.ButtonSeparation)
-
--- ================== TOGGLE (corregido) ==================
-local function toggleSpirit()
-    if spiritActive then
-        -- Desactivar
-        stopSpirit()
-        styleNormal(btnFalse)            -- ⬅ vuelve a blanco
-    else
-        -- Activar SOLO si startSpirit tuvo éxito
-        local ok = startSpirit()
-        if ok then
-            styleActive(btnFalse)        -- ⬅ se pone negro
-        else
-            styleNormal(btnFalse)        -- si falló, no te miente con negro
-        end
-    end
-end
-
-local function flashSpeed()
-    styleActive(btnSpeed)
-    task.delay(0.15, function()
-        if btnSpeed and btnSpeed.Parent then styleNormal(btnSpeed) end
-    end)
-end
-
--- ================== DRAG + LOCK ==================
-local function clampPos(frame, pos)
-    local vp = camera.ViewportSize
-    local sz = frame.AbsoluteSize
-    local p  = CONFIG.DragPadding
-    local x  = math.clamp(pos.X.Offset, -p, vp.X - sz.X + p)
-    local y  = math.clamp(pos.Y.Offset, -p, vp.Y - sz.Y + p)
-    return UDim2.new(0, x, 0, y)
-end
-
-local function isOverGui(guiObj, point)
-    local abs = guiObj.AbsolutePosition
-    local sz  = guiObj.AbsoluteSize
-    return point.X >= abs.X and point.X <= abs.X + sz.X
-       and point.Y >= abs.Y and point.Y <= abs.Y + sz.Y
-end
-
-local function makeDraggable(frame)
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType ~= Enum.UserInputType.MouseButton1
-        and input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-        local lBtn = frame:FindFirstChild("LockL")
-        if lBtn and isOverGui(lBtn, input.Position) then return end
-        if frame:GetAttribute("Locked") then return end
-
-        activeDrags[input] = {
-            frame     = frame,
-            dragStart = input.Position,
-            startPos  = frame.Position,
-            moved     = false,
-        }
-    end)
-end
-
-makeDraggable(btnFalse)
-makeDraggable(btnSpeed)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        local drag = activeDrags[input]
-        if drag then
-            local delta = input.Position - drag.dragStart
-            if delta.Magnitude > CONFIG.TapThreshold then drag.moved = true end
-            drag.frame.Position = clampPos(drag.frame, UDim2.new(
-                drag.startPos.X.Scale, drag.startPos.X.Offset + delta.X,
-                drag.startPos.Y.Scale, drag.startPos.Y.Offset + delta.Y
-            ))
-        end
-    elseif input.UserInputType == Enum.UserInputType.MouseMovement then
-        for inp, drag in pairs(activeDrags) do
-            if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-                local delta = input.Position - drag.dragStart
-                if delta.Magnitude > CONFIG.TapThreshold then drag.moved = true end
-                drag.frame.Position = clampPos(drag.frame, UDim2.new(
-                    drag.startPos.X.Scale, drag.startPos.X.Offset + delta.X,
-                    drag.startPos.Y.Scale, drag.startPos.Y.Offset + delta.Y
-                ))
-                break
-            end
-        end
-    end
+-- ================== EVENTOS ==================
+boton.MouseButton1Click:Connect(function()
+	if activo then
+		desactivar()
+	else
+		activar()
+	end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    local drag = activeDrags[input]
-    if not drag then return end
-    activeDrags[input] = nil
-    if not drag.moved then
-        if drag.frame == btnFalse then
-            toggleSpirit()
-        elseif drag.frame == btnSpeed then
-            doSpeed()
-            flashSpeed()
-        end
-    end
-end)
-
--- ================== SEGURIDAD ==================
--- Si el personaje respawnea mientras estaba activo, limpiar todo
+-- Si mueres o respawneas, se limpia todo automáticamente
 player.CharacterAdded:Connect(function()
-    if spiritActive then
-        stopSpirit()
-        styleNormal(btnFalse)
-    end
-end)
-
--- Red de seguridad: si por alguna razón el botón está negro
--- pero spiritActive es false (o al revés), sincronizar cada segundo
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if spiritActive then
-            if btnFalse.BackgroundColor3 ~= Color3.fromRGB(0, 0, 0) then
-                styleActive(btnFalse)
-            end
-            if #clones == 0 then
-                -- Consistencia: si está "activo" pero sin clones, desactivar
-                stopSpirit()
-                styleNormal(btnFalse)
-            end
-        else
-            if btnFalse.BackgroundColor3 ~= Color3.fromRGB(255, 255, 255) then
-                styleNormal(btnFalse)
-            end
-        end
-    end
+	if activo then
+		desactivar()
+	end
 end)
