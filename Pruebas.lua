@@ -1,187 +1,128 @@
---[[ ============================================================
-     BOTÓN "LAG" — Script LOCAL
-     Ubicación: StarterPlayer > StarterPlayerScripts
-     ------------------------------------------------------------
-     • Botón pequeño negro con letra blanca "lag"
-     • Al activarlo: tu personaje se vuelve invisible y aparece
-       un clon con tu mismo vestuario moviéndose súper rápido
-       (teleportes erráticos = efecto lag). El botón se pone morado.
-     • Al volver a tocarlo: todo se desactiva y el botón vuelve a negro.
-     ============================================================ ]]
-
-local Players    = game:GetService("Players")
-local RunService = game:GetService("RunService")
+--=============================================================
+--  LocalScript  →  StarterPlayer > StarterPlayerScripts
+--  Botón "speed": arrastrable + teletransporte 4x8 studs
+--=============================================================
+local Players           = game:GetService("Players")
+local UserInputService  = game:GetService("UserInputService")
+local TweenService      = game:GetService("TweenService")
 
 local player    = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- ================== INTERFAZ (GUI) ==================
-local gui = Instance.new("ScreenGui")
-gui.Name           = "LagGui"
-gui.ResetOnSpawn   = false
-gui.IgnoreGuiInset = true
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent         = playerGui
+--==================== CONFIGURACIÓN ==========================
+local BUTTON_SIZE   = 110    -- tamaño del cuadrado (px)
+local STUDS_PER_STEP = 8     -- "8 pies" por salto (studs)
+local STEPS          = 4     -- cantidad de saltos
+local STEP_DELAY     = 0.15  -- pausa entre saltos (seg)
+--=============================================================
 
-local boton = Instance.new("TextButton")
-boton.Name             = "BotonLag"
-boton.Size             = UDim2.new(0, 60, 0, 28)   -- botón pequeño
-boton.Position         = UDim2.new(0, 16, 0, 16)
-boton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)    -- negro
-boton.TextColor3       = Color3.fromRGB(255, 255, 255) -- letras blancas
-boton.Text             = "lag"
-boton.Font             = Enum.Font.SourceSansBold
-boton.TextSize         = 16
-boton.BorderSizePixel  = 0
-boton.AutoButtonColor  = false
-boton.Parent           = gui
+--==================== INTERFAZ ===============================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name            = "SpeedButtonGui"
+screenGui.ResetOnSpawn    = false
+screenGui.IgnoreGuiInset  = true
+screenGui.DisplayOrder    = 999
+screenGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
+screenGui.Parent          = playerGui
 
-local COLOR_NORMAL = Color3.fromRGB(0, 0, 0)
-local COLOR_ACTIVO = Color3.fromRGB(128, 0, 128)     -- morado
+local button = Instance.new("TextButton")
+button.Name             = "SpeedButton"
+button.Size             = UDim2.fromOffset(BUTTON_SIZE, BUTTON_SIZE)
+button.AnchorPoint      = Vector2.new(0, 0)
+button.BackgroundColor3 = Color3.new(0, 0, 0)
+button.BorderSizePixel  = 0
+button.Text             = "speed"
+button.TextColor3       = Color3.new(1, 1, 1)
+button.TextScaled       = true
+button.Font             = Enum.Font.GothamBold
+button.AutoButtonColor  = false
+button.Active           = true
+button.Parent           = screenGui
 
--- ================== ESTADO ==================
-local activo         = false
-local clon           = nil
-local conexionMov    = nil
-local transparencias = {}  -- guarda [parte] = transparencia original
-
--- ================== FUNCIONES ==================
-
--- Devuelve la transparencia original de tu personaje
-local function restaurarPersonaje()
-	local char = player.Character
-	if not char then return end
-	for parte, valor in pairs(transparencias) do
-		if parte and parte.Parent then
-			parte.Transparency = valor
-		end
-	end
-	transparencias = {}
+-- Centrar el botón al iniciar
+local function centerButton()
+    local vp = workspace.CurrentCamera.ViewportSize
+    button.Position = UDim2.fromOffset(
+        (vp.X - BUTTON_SIZE) / 2,
+        (vp.Y - BUTTON_SIZE) / 2
+    )
 end
+centerButton()
 
--- Vuelve invisible a tu personaje (solo en tu pantalla)
-local function ocultarPersonaje()
-	local char = player.Character
-	if not char then return end
-	transparencias = {}
-	for _, obj in ipairs(char:GetDescendants()) do
-		if obj:IsA("BasePart") then
-			transparencias[obj] = obj.Transparency
-			obj.Transparency = 1
-		elseif obj:IsA("Decal") or obj:IsA("Texture") then
-			transparencias[obj] = obj.Transparency
-			obj.Transparency = 1
-		end
-	end
-end
+--==================== ARRASTRAR ==============================
+local dragInput, dragStart, startX, startY, moved
 
--- Crea el clon con tu mismo vestuario
-local function crearClon()
-	local char = player.Character
-	if not char then return nil, nil end
-
-	local copia = char:Clone()
-	copia.Name  = "ClonLag"
-
-	for _, obj in ipairs(copia:GetDescendants()) do
-		if obj:IsA("Script") or obj:IsA("LocalScript") then
-			obj:Destroy() -- quitar scripts para que no interfieran
-		elseif obj:IsA("BasePart") then
-			obj.CanCollide   = false
-			obj.Anchored     = false
-			obj.Transparency = 0 -- que se vea bien
-		end
-	end
-
-	local hum = copia:FindFirstChildOfClass("Humanoid")
-	if hum then
-		hum.DisplayName  = "lag"
-		hum.PlatformStand = true
-	end
-
-	local root = copia:FindFirstChild("HumanoidRootPart")
-		or copia:FindFirstChildWhichIsA("BasePart")
-	if root then
-		root.Anchored   = true
-		root.CanCollide = false
-	end
-
-	copia.Parent = workspace
-	return copia, root
-end
-
--- Movimiento errático y rapidísimo (efecto lag)
-local function iniciarMovimiento(clonObj, root)
-	conexionMov = RunService.Heartbeat:Connect(function()
-		if not (clonObj and clonObj.Parent and root and root.Parent) then
-			return
-		end
-
-		local char    = player.Character
-		local miRoot  = char and char:FindFirstChild("HumanoidRootPart")
-		local base    = miRoot and miRoot.CFrame or root.CFrame
-
-		-- saltos aleatorios cada frame → parece lag/glitch
-		local angulo = math.random() * math.pi * 2
-		local radio  = math.random(2, 12)
-		local altura = math.random(-2, 4)
-
-		local offset = Vector3.new(
-			math.cos(angulo) * radio,
-			altura,
-			math.sin(angulo) * radio
-		)
-
-		root.CFrame = base
-			* CFrame.new(offset)
-			* CFrame.Angles(0, math.random() * math.pi * 2, 0)
-	end)
-end
-
--- Activar / Desactivar
-local function desactivar()
-	activo = false
-	boton.BackgroundColor3 = COLOR_NORMAL
-
-	if conexionMov then
-		conexionMov:Disconnect()
-		conexionMov = nil
-	end
-	if clon then
-		clon:Destroy()
-		clon = nil
-	end
-
-	restaurarPersonaje()
-end
-
-local function activar()
-	activo = true
-	boton.BackgroundColor3 = COLOR_ACTIVO
-
-	-- 1) Primero el clon (para que copie tu vestuario visible)
-	local c, root = crearClon()
-	if c and root then
-		clon = c
-		iniciarMovimiento(c, root)
-	end
-
-	-- 2) Luego te ocultas tú
-	ocultarPersonaje()
-end
-
--- ================== EVENTOS ==================
-boton.MouseButton1Click:Connect(function()
-	if activo then
-		desactivar()
-	else
-		activar()
-	end
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+        dragStart = input.Position
+        startX    = button.Position.X.Offset
+        startY    = button.Position.Y.Offset
+        moved     = false
+    end
 end)
 
--- Si mueres o respawneas, se limpia todo automáticamente
-player.CharacterAdded:Connect(function()
-	if activo then
-		desactivar()
-	end
+UserInputService.InputChanged:Connect(function(input)
+    if input ~= dragInput then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+    local delta = input.Position - dragStart
+    if delta.Magnitude > 10 then moved = true end
+
+    local vp  = workspace.CurrentCamera.ViewportSize
+    local newX = math.clamp(startX + delta.X, 0, vp.X - BUTTON_SIZE)
+    local newY = math.clamp(startY + delta.Y, 0, vp.Y - BUTTON_SIZE)
+
+    button.Position = UDim2.fromOffset(newX, newY)
 end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input ~= dragInput then return end
+    dragInput = nil
+    if not moved then          -- fue un toque, no un arrastre
+        activate()
+    end
+end)
+
+--==================== TELETRANSPORTE =========================
+local function teleportForward()
+    local character = player.Character
+    if not character then return end
+
+    for i = 1, STEPS do
+        character = player.Character
+        if not character then break end
+
+        local root = character:FindFirstChild("HumanoidRootPart")
+        if not root then break end
+
+        -- Avanza 8 studs hacia donde mira el personaje
+        character:PivotTo(character:GetPivot() * CFrame.new(0, 0, -STUDS_PER_STEP))
+
+        task.wait(STEP_DELAY)
+    end
+end
+
+--==================== ACTIVAR / DESACTIVAR ===================
+local used = false
+
+function activate()
+    if used then return end
+    used = true
+
+    -- 1) Se pone blanco completo
+    TweenService:Create(button, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.new(1, 1, 1),
+        TextColor3       = Color3.new(1, 1, 1),
+    }):Play()
+
+    -- 2) Se desactiva (no se puede volver a tocar ni arrastrar)
+    button.Active        = false
+    button.AutoButtonColor = false
+    dragInput            = nil
+
+    -- 3) Teletransporte
+    teleportForward()
+end
