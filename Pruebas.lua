@@ -1,228 +1,219 @@
---=============================================================
---  BOTÓN "SPEED" ARRASTRABLE + TELETRANSPORTE
---  LocalScript → StarterPlayer > StarterPlayerScripts
---=============================================================
+
+-- MINI HUB: SPEED + TP
+-- LocalScript en StarterPlayer > StarterPlayerScripts
 
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
---==================== CONFIGURACIÓN ==========================
-local CONFIG = {
-	PIES_POR_SALTO  = 4,      -- pies que avanza por toque
-	STUDS_POR_PIE   = 0.93,   -- 1 pie ≈ 0.93 studs (pon 1 si usas 1 stud = 1 pie)
-	TAMANO_BOTON    = 70,     -- tamaño del cuadrado en píxeles
-	TAMANO_L        = 20,     -- tamaño de la "L"
-	UMBRAL_ARRASTRE = 12,     -- píxeles de movimiento para contar como arrastre
-}
+local gui = Instance.new("ScreenGui")
+gui.Name = "MiniHub"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = player:WaitForChild("PlayerGui")
 
-local DISTANCIA = CONFIG.PIES_POR_SALTO * CONFIG.STUDS_POR_PIE
+local bloqueados = {}
+local arrastres = {}
 
---==================== COLORES ================================
-local COLOR = {
-	fondoNormal   = Color3.fromRGB(0, 0, 0),
-	textoNormal   = Color3.fromRGB(255, 255, 255),
-	fondoPresion  = Color3.fromRGB(255, 255, 255),
-	textoPresion  = Color3.fromRGB(0, 0, 0),
-	L_libre       = Color3.fromRGB(40, 170, 80),
-	L_bloqueado   = Color3.fromRGB(200, 55, 55),
-}
+local function crearBoton(nombre, posicion)
+    local boton = Instance.new("TextButton")
+    boton.Name = nombre
+    boton.Size = UDim2.fromOffset(100, 45)
+    boton.Position = posicion
+    boton.BackgroundColor3 = Color3.new(1, 1, 1)
+    boton.TextColor3 = Color3.new(0, 0, 0)
+    boton.Text = nombre
+    boton.TextSize = 16
+    boton.Font = Enum.Font.GothamBold
+    boton.AutoButtonColor = false
+    boton.Active = true
+    boton.Parent = gui
 
---==================== ESTADO =================================
-local estado = {
-	centro      = Vector2.new(0, 0),
-	bloqueado   = false,
-	arrastrando = false,
-	recorrido   = 0,
-	presionado  = false,
-}
+    local esquina = Instance.new("UICorner")
+    esquina.CornerRadius = UDim.new(0, 10)
+    esquina.Parent = boton
 
---==================== INTERFAZ ===============================
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SpeedButtonGui"
-screenGui.IgnoreGuiInset = true
-screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 100
-screenGui.Parent = player:WaitForChild("PlayerGui")
+    local borde = Instance.new("UIStroke")
+    borde.Color = Color3.new(0, 0, 0)
+    borde.Thickness = 2
+    borde.Parent = boton
 
--- Botón principal
-local boton = Instance.new("TextButton")
-boton.Name = "SpeedButton"
-boton.AnchorPoint = Vector2.new(0.5, 0.5)
-boton.Position = UDim2.fromScale(0.5, 0.5)
-boton.Size = UDim2.fromOffset(CONFIG.TAMANO_BOTON, CONFIG.TAMANO_BOTON)
-boton.BackgroundColor3 = COLOR.fondoNormal
-boton.BorderSizePixel = 0
-boton.AutoButtonColor = false
-boton.Text = "SPEED"
-boton.TextColor3 = COLOR.textoNormal
-boton.Font = Enum.Font.GothamBold
-boton.TextScaled = true
-boton.ZIndex = 2
-boton.Parent = screenGui
+    local candado = Instance.new("TextButton")
+    candado.Name = "Candado"
+    candado.Size = UDim2.fromOffset(22, 20)
+    candado.Position = UDim2.new(1, 3, 0, -6)
+    candado.AnchorPoint = Vector2.new(1, 0)
+    candado.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+    candado.Text = "🔓"
+    candado.TextSize = 12
+    candado.ZIndex = 3
+    candado.Parent = boton
 
-local borde = Instance.new("UIStroke")
-borde.Color = Color3.fromRGB(255, 255, 255)
-borde.Thickness = 2
-borde.Transparency = 0.55
-borde.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-borde.Parent = boton
+    local redondeo = Instance.new("UICorner")
+    redondeo.CornerRadius = UDim.new(0, 5)
+    redondeo.Parent = candado
 
--- Botón "L" (arriba a la derecha)
-local botonL = Instance.new("TextButton")
-botonL.Name = "LockButton"
-botonL.AnchorPoint = Vector2.new(0, 0)
-botonL.Size = UDim2.fromOffset(CONFIG.TAMANO_L, CONFIG.TAMANO_L)
-botonL.BackgroundColor3 = COLOR.L_libre
-botonL.BorderSizePixel = 0
-botonL.AutoButtonColor = false
-botonL.Text = "L"
-botonL.TextColor3 = Color3.fromRGB(255, 255, 255)
-botonL.Font = Enum.Font.GothamBold
-botonL.TextScaled = true
-botonL.ZIndex = 3
-botonL.Parent = screenGui
+    bloqueados[boton] = false
 
-local bordeL = borde:Clone()
-bordeL.Transparency = 0.3
-bordeL.Parent = botonL
+    candado.Activated:Connect(function()
+        bloqueados[boton] = not bloqueados[boton]
+        candado.Text = bloqueados[boton] and "🔒" or "🔓"
+        candado.BackgroundColor3 = bloqueados[boton]
+            and Color3.fromRGB(120, 120, 120)
+            or Color3.fromRGB(220, 220, 220)
 
---==================== UTILIDADES =============================
-local function tamanoPantalla()
-	local cam = Workspace.CurrentCamera
-	if cam then return cam.ViewportSize end
-	return Vector2.new(1280, 720)
+        if bloqueados[boton] then
+            arrastres[boton] = nil
+        end
+    end)
+
+    boton.InputBegan:Connect(function(input)
+        if bloqueados[boton] then return end
+
+        if input.UserInputType == Enum.UserInputType.Touch
+        or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            arrastres[boton] = {
+                input = input,
+                inicio = input.Position,
+                posicion = boton.Position,
+                movido = false
+            }
+        end
+    end)
+
+    botones = botones or {}
+    botones[nombre] = boton
+
+    return boton
 end
 
-local function posicionarL()
-	local p = boton.Position
-	local mitad = CONFIG.TAMANO_BOTON / 2
-	local mL = CONFIG.TAMANO_L / 2
-	botonL.Position = UDim2.new(
-		p.X.Scale, p.X.Offset + mitad - mL,
-		p.Y.Scale, p.Y.Offset - mitad - mL
-	)
-end
+UserInputService.InputChanged:Connect(function(input)
+    for boton, data in pairs(arrastres) do
+        if not bloqueados[boton]
+        and (input == data.input
+        or input.UserInputType == Enum.UserInputType.MouseMovement) then
 
-local function fijarCentro(nuevoCentro)
-	local vp = tamanoPantalla()
-	local mitad = CONFIG.TAMANO_BOTON / 2
-	estado.centro = Vector2.new(
-		math.clamp(nuevoCentro.X, mitad, math.max(mitad, vp.X - mitad)),
-		math.clamp(nuevoCentro.Y, mitad, math.max(mitad, vp.Y - mitad))
-	)
-	boton.Position = UDim2.fromOffset(estado.centro.X, estado.centro.Y)
-	posicionarL()
-end
+            local delta = input.Position - data.inicio
 
-local function aplicarVisual()
-	if estado.presionado then
-		boton.BackgroundColor3 = COLOR.fondoPresion
-		boton.TextColor3 = COLOR.textoPresion
-	else
-		boton.BackgroundColor3 = COLOR.fondoNormal
-		boton.TextColor3 = COLOR.textoNormal
-	end
-end
+            if delta.Magnitude > 6 then
+                data.movido = true
+            end
 
-local function esEntradaValida(input)
-	return input.UserInputType == Enum.UserInputType.Touch
-		or input.UserInputType == Enum.UserInputType.MouseButton1
-end
+            if data.movido then
+                local camera = workspace.CurrentCamera
+                if not camera then return end
 
-local function puntaEnBotonL(input)
-	local p = botonL.AbsolutePosition
-	local s = botonL.AbsoluteSize
-	local pos = input.Position
-	return pos.X >= p.X and pos.X <= p.X + s.X
-		and pos.Y >= p.Y and pos.Y <= p.Y + s.Y
-end
+                local size = camera.ViewportSize
+                local x = math.clamp(
+                    data.posicion.X.Offset + delta.X,
+                    0, size.X - boton.AbsoluteSize.X
+                )
+                local y = math.clamp(
+                    data.posicion.Y.Offset + delta.Y,
+                    0, size.Y - boton.AbsoluteSize.Y
+                )
 
---==================== TELETRANSPORTE =========================
-local function teletransportar()
-	local personaje = player.Character
-	if not personaje then return false end
-
-	local hrp = personaje:FindFirstChild("HumanoidRootPart")
-	local humanoide = personaje:FindFirstChildOfClass("Humanoid")
-	if not hrp or not humanoide or humanoide.Health <= 0 then return false end
-
-	local dir = hrp.CFrame.LookVector
-	dir = Vector3.new(dir.X, 0, dir.Z)
-	if dir.Magnitude < 0.01 then
-		dir = Vector3.new(0, 0, -1)
-	end
-	dir = dir.Unit
-
-	hrp.CFrame = hrp.CFrame + dir * DISTANCIA
-	return true
-end
-
-local function usarBoton()
-	teletransportar()
-end
-
---==================== ENTRADA DEL BOTÓN ======================
-boton.InputBegan:Connect(function(input)
-	if not esEntradaValida(input) then return end
-	if puntaEnBotonL(input) then return end
-
-	estado.arrastrando = true
-	estado.recorrido = 0
-	estado.presionado = true
-	aplicarVisual()
+                boton.Position = UDim2.fromOffset(x, y)
+            end
+        end
+    end
 end)
 
-boton.InputChanged:Connect(function(input)
-	if not estado.arrastrando then return end
-	if input.UserInputType ~= Enum.UserInputType.Touch
-		and input.UserInputType ~= Enum.UserInputType.MouseMovement then
-		return
-	end
-
-	local d = input.Delta
-	estado.recorrido += d.Magnitude
-
-	if estado.recorrido > CONFIG.UMBRAL_ARRASTRE and not estado.bloqueado then
-		fijarCentro(estado.centro + Vector2.new(d.X, d.Y))
-	end
+UserInputService.InputEnded:Connect(function(input)
+    for boton, data in pairs(arrastres) do
+        if input == data.input
+        or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            arrastres[boton] = nil
+        end
+    end
 end)
 
-boton.InputEnded:Connect(function(input)
-	if not esEntradaValida(input) then return end
-	if not estado.arrastrando then return end
-
-	estado.arrastrando = false
-	local fueToque = estado.recorrido <= CONFIG.UMBRAL_ARRASTRE
-	estado.presionado = false
-	aplicarVisual()
-
-	if fueToque then
-		usarBoton()
-	end
-end)
-
---==================== BOTÓN "L" (BLOQUEO) ====================
-botonL.InputBegan:Connect(function(input)
-	if not esEntradaValida(input) then return end
-
-	estado.bloqueado = not estado.bloqueado
-
-	if estado.bloqueado then
-		botonL.BackgroundColor3 = COLOR.L_bloqueado
-	else
-		botonL.BackgroundColor3 = COLOR.L_libre
-	end
-end)
-
---==================== INICIO =================================
-fijarCentro(tamanoPantalla() / 2)
-aplicarVisual()
-
-local cam = Workspace.CurrentCamera
-if cam then
-	cam:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-		fijarCentro(estado.centro)
-	end)
+local function conectarAccion(boton, accion)
+    boton.Activated:Connect(function()
+        local data = arrastres[boton]
+        if data and data.movido then
+            data.movido = false
+            return
+        end
+        accion()
+    end)
 end
+
+-- BOTONES: solo SPEED y TP
+local speed = crearBoton(
+    "SPEED",
+    UDim2.new(1, -110, 0.30, 0)
+)
+
+local tp = crearBoton(
+    "TP",
+    UDim2.new(1, -110, 0.30, 55)
+)
+
+-- CAMPO DE VELOCIDAD
+local entrada = Instance.new("TextBox")
+entrada.Name = "SpeedInput"
+entrada.Size = UDim2.fromOffset(100, 40)
+entrada.Position = UDim2.new(1, -110, 0.30, 110)
+entrada.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+entrada.TextColor3 = Color3.new(1, 1, 1)
+entrada.PlaceholderText = "Velocidad 30-60"
+entrada.Text = "30"
+entrada.TextSize = 14
+entrada.Font = Enum.Font.Gotham
+entrada.ClearTextOnFocus = false
+entrada.Parent = gui
+
+local esquinaEntrada = Instance.new("UICorner")
+esquinaEntrada.CornerRadius = UDim.new(0, 8)
+esquinaEntrada.Parent = entrada
+
+local velocidad = 30
+
+local function aplicarVelocidad()
+    local numero = tonumber(entrada.Text)
+
+    if not numero then
+        entrada.Text = tostring(velocidad)
+        return
+    end
+
+    velocidad = math.clamp(numero, 30, 60)
+    entrada.Text = tostring(velocidad)
+
+    local personaje = player.Character
+    local humanoide = personaje
+        and personaje:FindFirstChildOfClass("Humanoid")
+
+    if humanoide then
+        humanoide.WalkSpeed = velocidad
+    end
+end
+
+entrada.FocusLost:Connect(aplicarVelocidad)
+conectarAccion(speed, aplicarVelocidad)
+
+player.CharacterAdded:Connect(function(personaje)
+    personaje:WaitForChild("Humanoid").WalkSpeed = velocidad
+end)
+
+-- TP: posición configurable de tu propio juego
+local destinoTP = nil
+
+conectarAccion(tp, function()
+    if not destinoTP then
+        warn("Configura destinoTP con la posición de tu base.")
+        return
+    end
+
+    local personaje = player.Character
+    local raiz = personaje
+        and personaje:FindFirstChild("HumanoidRootPart")
+
+    if raiz then
+        personaje:PivotTo(CFrame.new(destinoTP))
+    end
+end)
+
+print("MiniHub cargado: SPEED + TP")
