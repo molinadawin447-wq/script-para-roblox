@@ -15,6 +15,7 @@ gui.Parent = player:WaitForChild("PlayerGui")
 
 local bloqueados = {}
 local arrastres = {}
+local botones = {}
 
 local function crearBoton(nombre, posicion)
     local boton = Instance.new("TextButton")
@@ -55,6 +56,7 @@ local function crearBoton(nombre, posicion)
     redondeo.Parent = candado
 
     bloqueados[boton] = false
+    botones[nombre] = boton
 
     candado.Activated:Connect(function()
         bloqueados[boton] = not bloqueados[boton]
@@ -81,9 +83,6 @@ local function crearBoton(nombre, posicion)
             }
         end
     end)
-
-    botones = botones or {}
-    botones[nombre] = boton
 
     return boton
 end
@@ -140,7 +139,7 @@ local function conectarAccion(boton, accion)
     end)
 end
 
--- BOTONES: solo SPEED y TP
+-- BOTONES
 local speed = crearBoton(
     "SPEED",
     UDim2.new(1, -110, 0.30, 0)
@@ -198,21 +197,42 @@ player.CharacterAdded:Connect(function(personaje)
     personaje:WaitForChild("Humanoid").WalkSpeed = velocidad
 end)
 
--- TP: posición configurable de tu propio juego
-local destinoTP = nil
+-- TP: BUSCAR MiBase Y TELETRANSPORTARSE DELANTE
+local tpOcupado = false
 
 conectarAccion(tp, function()
-    if not destinoTP then
-        warn("Configura destinoTP con la posición de tu base.")
-        return
-    end
+    if tpOcupado then return end
 
-    local personaje = player.Character
-    local raiz = personaje
-        and personaje:FindFirstChild("HumanoidRootPart")
+    tpOcupado = true
+    tp.BackgroundColor3 = Color3.new(0, 0, 0)
 
-    if raiz then
-        personaje:PivotTo(CFrame.new(destinoTP))
+    local exito, errorTP = pcall(function()
+        local personaje = player.Character
+        if not personaje then
+            error("No se encontró el personaje.")
+        end
+
+        local base = workspace:FindFirstChild("MiBase", true)
+
+        if not base or not base:IsA("BasePart") then
+            error("Crea una pieza BasePart llamada MiBase en tu propio juego.")
+        end
+
+        -- Posición delante de la base
+        local destino = base.CFrame * CFrame.new(
+            0,
+            3,
+            -(base.Size.Z / 2 + 4)
+        )
+
+        personaje:PivotTo(destino)
+    end)
+
+    tp.BackgroundColor3 = Color3.new(1, 1, 1)
+    tpOcupado = false
+
+    if not exito then
+        warn("TP: " .. tostring(errorTP))
     end
 end)
 
