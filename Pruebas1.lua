@@ -1,6 +1,7 @@
 --=============================================================
 --  BOTÓN "LAG" - CLON LOCO + INVISIBILIDAD
 --  LocalScript → StarterPlayer > StarterPlayerScripts
+--  Blanco = desactivado | Negro = activado
 --=============================================================
 
 local Players    = game:GetService("Players")
@@ -25,10 +26,12 @@ local CONFIG = {
 
 --==================== COLORES ================================
 local COLOR = {
-	fondo       = Color3.fromRGB(0, 0, 0),
-	texto       = Color3.fromRGB(255, 255, 255),
-	L_libre     = Color3.fromRGB(40, 170, 80),
-	L_bloqueado = Color3.fromRGB(200, 55, 55),
+	fondoApagado  = Color3.fromRGB(255, 255, 255), -- blanco cuando NO está activo
+	textoApagado  = Color3.fromRGB(0, 0, 0),
+	fondoActivo   = Color3.fromRGB(0, 0, 0),       -- negro cuando SÍ está activo
+	textoActivo   = Color3.fromRGB(255, 255, 255),
+	L_libre       = Color3.fromRGB(40, 170, 80),
+	L_bloqueado   = Color3.fromRGB(200, 55, 55),
 }
 
 --==================== ESTADO =================================
@@ -56,11 +59,11 @@ boton.Name = "LagButton"
 boton.AnchorPoint = Vector2.new(0.5, 0.5)
 boton.Position = CONFIG.POSICION_INICIAL
 boton.Size = UDim2.fromOffset(CONFIG.TAMANO_BOTON, CONFIG.TAMANO_BOTON)
-boton.BackgroundColor3 = COLOR.fondo
+boton.BackgroundColor3 = COLOR.fondoApagado
 boton.BorderSizePixel = 0
 boton.AutoButtonColor = false
 boton.Text = "LAG"
-boton.TextColor3 = COLOR.texto
+boton.TextColor3 = COLOR.textoApagado
 boton.Font = Enum.Font.GothamBold
 boton.TextScaled = true
 boton.ZIndex = 2
@@ -132,6 +135,16 @@ local function puntaEnBotonL(input)
 		and pos.Y >= p.Y and pos.Y <= p.Y + s.Y
 end
 
+local function aplicarVisual()
+	if estado.activo then
+		boton.BackgroundColor3 = COLOR.fondoActivo
+		boton.TextColor3 = COLOR.textoActivo
+	else
+		boton.BackgroundColor3 = COLOR.fondoApagado
+		boton.TextColor3 = COLOR.textoApagado
+	end
+end
+
 --==================== CLON LOCO ==============================
 local function crearClon()
 	local personaje = player.Character
@@ -187,10 +200,12 @@ local function activar()
 	estado.clon = crearClon()
 	if not estado.clon then
 		estado.activo = false
+		aplicarVisual()
 		return
 	end
 
 	ocultarPersonaje()
+	aplicarVisual()
 
 	local hrpClon = estado.clon:FindFirstChild("HumanoidRootPart")
 	if not hrpClon then return end
@@ -238,6 +253,7 @@ local function desactivar()
 		estado.clon = nil
 	end
 	mostrarPersonaje()
+	aplicarVisual()
 end
 
 local function toggle()
@@ -291,6 +307,7 @@ fijarCentro(Vector2.new(
 	CONFIG.POSICION_INICIAL.X.Scale * vpIni.X + CONFIG.POSICION_INICIAL.X.Offset,
 	CONFIG.POSICION_INICIAL.Y.Scale * vpIni.Y + CONFIG.POSICION_INICIAL.Y.Offset
 ))
+aplicarVisual()
 
 player.CharacterAdded:Connect(function()
 	if estado.activo then desactivar() end
